@@ -646,20 +646,236 @@
             to { transform: scale(1.15); }
         }
 
+
+        /* =========================================================
+           IMMERSIVE CAMERA GAME MODE
+           Question + answers live inside the same camera frame.
+           Pose skeleton/landmarks are NEVER rendered.
+           ========================================================= */
+
+        .immersive-game-body {
+            display: block;
+            height: calc(100% - 90px);
+            min-height: 0;
+        }
+
+        .camera-stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            background: #020617;
+            box-shadow: 0 0 30px rgba(56,189,248,0.15);
+        }
+
+        .camera-stage #webcamVideo {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            opacity: 1;
+            z-index: 0;
+            background: #020617;
+        }
+
+        /* Pose canvas is used for detection only; never show movement lines. */
+        .camera-stage #poseCanvas {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        .camera-vignette {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at center, rgba(0,0,0,0.02) 35%, rgba(0,0,0,0.45) 100%);
+        }
+
+        .camera-top-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 42%;
+            z-index: 2;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(3,7,18,0.78), rgba(3,7,18,0));
+        }
+
+        .camera-bottom-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 48%;
+            z-index: 2;
+            pointer-events: none;
+            background: linear-gradient(to top, rgba(3,7,18,0.88), rgba(3,7,18,0));
+        }
+
+        .question-overlay {
+            position: absolute;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(92%, 980px);
+            z-index: 5;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .question-overlay .level-badge {
+            display: inline-block;
+            align-self: initial;
+            margin-bottom: 10px;
+            padding: 6px 16px;
+            background: rgba(6, 9, 19, 0.78);
+            backdrop-filter: blur(8px);
+        }
+
+        .question-overlay .question-text {
+            display: inline-block;
+            max-width: 100%;
+            margin: 0 auto 10px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            background: rgba(3, 7, 18, 0.68);
+            backdrop-filter: blur(8px);
+            font-size: clamp(20px, 2.3vw, 31px);
+            line-height: 1.35;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+        }
+
+        .question-overlay .math-display {
+            display: inline-block;
+            min-width: min(60%, 600px);
+            margin: 0 auto;
+            padding: 9px 22px;
+            background: rgba(2,6,23,0.76);
+            backdrop-filter: blur(8px);
+            font-size: clamp(22px, 2.6vw, 34px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.22);
+        }
+
+        /* Invisible detection zones: no borders, no labels, no grid. */
+        .camera-overlay-hud {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .hud-zone,
+        .hud-zone.hovered,
+        .hud-zone.locked {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .answer-overlay {
+            position: absolute;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%);
+            width: min(92%, 980px);
+            z-index: 6;
+        }
+
+        .answer-overlay .options-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 0;
+        }
+
+        .answer-overlay .option-card {
+            min-height: 104px;
+            background: rgba(3,7,18,0.72);
+            border: 2px solid rgba(255,255,255,0.28);
+            backdrop-filter: blur(9px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+        }
+
+        .answer-overlay .option-card.active-target {
+            border-color: var(--primary-cyan);
+            background: rgba(14,116,144,0.72);
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        .answer-overlay .option-card.selected-lock {
+            border-color: var(--neon-green);
+            background: rgba(21,128,61,0.78);
+        }
+
+        .answer-overlay .option-val {
+            font-size: clamp(22px, 2.4vw, 32px);
+        }
+
+        .movement-hint {
+            margin-top: 9px;
+            text-align: center;
+            color: #fff;
+            font-size: 13px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+        }
+
+        .movement-hint span {
+            color: var(--neon-yellow);
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        .camera-status-pill {
+            position: absolute;
+            right: 16px;
+            bottom: 16px;
+            z-index: 7;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 10px;
+            border-radius: 20px;
+            background: rgba(3,7,18,0.72);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 11px;
+            pointer-events: none;
+        }
+
+        .camera-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .camera-stage .feedback-overlay {
+            z-index: 20;
+        }
+
+        .camera-stage .combo-badge {
+            z-index: 12;
+        }
+
         @media (max-width: 1000px) {
             #appContainer {
                 width: 100vw;
                 height: 100vh;
                 border-radius: 0;
-            }
-
-            .game-body {
-                grid-template-columns: 1fr;
-                overflow-y: auto;
-            }
-
-            .camera-panel {
-                min-height: 300px;
             }
 
             .hero-title {
@@ -670,13 +886,19 @@
                 grid-template-columns: 1fr 1fr;
                 width: min(90vw, 460px);
             }
+
+            .question-overlay {
+                top: 14px;
+                width: 94%;
+            }
+
+            .answer-overlay {
+                bottom: 12px;
+                width: 94%;
+            }
         }
 
         @media (max-width: 650px) {
-            .options-container {
-                grid-template-columns: 1fr;
-            }
-
             .hud-top {
                 flex-wrap: wrap;
                 gap: 8px;
@@ -684,6 +906,37 @@
 
             .timer-bar-container {
                 width: 180px;
+            }
+
+            .answer-overlay .options-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 7px;
+            }
+
+            .answer-overlay .option-card {
+                min-height: 82px;
+                padding: 10px 5px;
+            }
+
+            .answer-overlay .option-key {
+                top: 5px;
+                left: 5px;
+                width: 20px;
+                height: 20px;
+            }
+
+            .movement-hint {
+                font-size: 11px;
+            }
+
+            .question-overlay .question-text {
+                font-size: 17px;
+                padding: 7px 10px;
+            }
+
+            .question-overlay .math-display {
+                font-size: 20px;
+                padding: 6px 12px;
             }
         }
 
@@ -798,70 +1051,81 @@
                 </button>
             </div>
 
-            <!-- Main Interactive Game Body -->
-            <div class="game-body">
-                <!-- Left: Question & Options -->
-                <div class="question-panel">
-                    <div>
+            <!-- Main Interactive Game Body: Camera + Question + Answers in ONE FRAME -->
+            <div class="game-body immersive-game-body">
+                <div class="camera-stage">
+                    <!-- Camera is the full game background -->
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <!-- Pose canvas is intentionally invisible: used only for detection -->
+                    <canvas id="poseCanvas" aria-hidden="true"></canvas>
+
+                    <!-- Dark readability overlays -->
+                    <div class="camera-vignette"></div>
+                    <div class="camera-top-gradient"></div>
+                    <div class="camera-bottom-gradient"></div>
+
+                    <!-- Question overlay: same frame as camera -->
+                    <div class="question-overlay">
                         <span class="level-badge" id="hudLevelBadge">LEVEL 1: FIND a</span>
-                        <div class="question-text" id="hudQuestionText">พหุนาม P(x) หารด้วย (x - 3) ถามว่าค่า a คือเท่าใด?</div>
-                        <div class="math-display" id="hudMathDisplay">P(x) ÷ (x - 3)</div>
+                        <div class="question-text" id="hudQuestionText">
+                            พหุนาม P(x) ถูกหารด้วย (x - 3) ค่าตัวหาร (a) คือเท่าใด?
+                        </div>
+                        <div class="math-display" id="hudMathDisplay">P(x) \div (x - 3)</div>
                     </div>
 
-                    <!-- 3 Options -->
-                    <div class="options-container">
-                        <div class="option-card" id="optCardA" onclick="GameApp.selectOptionManual('A')">
-                            <div class="option-key">A</div>
-                            <div class="option-val" id="optValA">-3</div>
-                            <div class="lock-progress" id="optProgressA"></div>
-                        </div>
+                    <!-- Invisible pose zones: detection only, no lines/grid shown -->
+                    <div class="camera-overlay-hud" aria-hidden="true">
+                        <div class="hud-zone" id="zoneA"></div>
+                        <div class="hud-zone" id="zoneB"></div>
+                        <div class="hud-zone" id="zoneC"></div>
+                    </div>
 
-                        <div class="option-card" id="optCardB" onclick="GameApp.selectOptionManual('B')">
-                            <div class="option-key">B</div>
-                            <div class="option-val" id="optValB">3</div>
-                            <div class="lock-progress" id="optProgressB"></div>
-                        </div>
+                    <!-- Answer choices: same frame as camera -->
+                    <div class="answer-overlay">
+                        <div class="options-container">
+                            <div class="option-card" id="optCardA" onclick="GameApp.selectOptionManual('A')">
+                                <div class="option-key">A</div>
+                                <div class="option-val" id="optValA">-3</div>
+                                <div class="lock-progress" id="optProgressA"></div>
+                            </div>
 
-                        <div class="option-card" id="optCardC" onclick="GameApp.selectOptionManual('C')">
-                            <div class="option-key">C</div>
-                            <div class="option-val" id="optValC">0</div>
-                            <div class="lock-progress" id="optProgressC"></div>
+                            <div class="option-card" id="optCardB" onclick="GameApp.selectOptionManual('B')">
+                                <div class="option-key">B</div>
+                                <div class="option-val" id="optValB">3</div>
+                                <div class="lock-progress" id="optProgressB"></div>
+                            </div>
+
+                            <div class="option-card" id="optCardC" onclick="GameApp.selectOptionManual('C')">
+                                <div class="option-key">C</div>
+                                <div class="option-val" id="optValC">0</div>
+                                <div class="lock-progress" id="optProgressC"></div>
+                            </div>
+                        </div>
+                        <div class="movement-hint">
+                            <i class="fa-solid fa-person-walking"></i>
+                            ขยับตัวซ้าย • กลาง • ขวา เพื่อเลือกคำตอบ
+                            <span>ค้าง 1 วินาที</span>
                         </div>
                     </div>
 
-                    <!-- Feedback Modal -->
+                    <div class="camera-status-pill">
+                        <span class="camera-dot"></span>
+                        <span id="cameraActiveLabel">Camera Active</span>
+                    </div>
+
+                    <!-- Feedback Modal remains in the same camera frame -->
                     <div id="feedbackOverlay" class="feedback-overlay">
                         <div id="fbTitle" class="feedback-title correct">🎉 CORRECT!</div>
                         <div id="fbScoreAdd" style="font-family: var(--font-title); font-size: 20px; color: var(--neon-yellow);">+150 POINTS</div>
                         <div id="fbSolution" class="solution-box">
                             วิธีคิด: ตัวหารคือ (x - 3) ดังนั้น a = 3
                         </div>
-                        <button class="btn-futuristic" onclick="GameApp.nextQuestion()"><i class="fa-solid fa-arrow-right"></i> NEXT QUESTION</button>
+                        <button class="btn-futuristic" onclick="GameApp.nextQuestion()">
+                            <i class="fa-solid fa-arrow-right"></i> NEXT QUESTION
+                        </button>
                     </div>
 
                     <div id="comboBadge" class="combo-badge" style="display: none;">3x COMBO!</div>
-                </div>
-
-                <!-- Right: Pose Tracking Camera Feed & Zones -->
-                <div class="camera-panel">
-                    <video id="webcamVideo" autoplay playsinline muted></video>
-                    <canvas id="poseCanvas"></canvas>
-
-                    <div class="camera-overlay-hud">
-                        <div class="hud-zone" id="zoneA">
-                            <span class="zone-tag">ZONE A (Left)</span>
-                        </div>
-                        <div class="hud-zone" id="zoneB">
-                            <span class="zone-tag">ZONE B (Center)</span>
-                        </div>
-                        <div class="hud-zone" id="zoneC">
-                            <span class="zone-tag">ZONE C (Right)</span>
-                        </div>
-                    </div>
-
-                    <div class="fallback-bar">
-                        <i class="fa-solid fa-video"></i> <span id="cameraActiveLabel">Camera Active</span>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1455,8 +1719,8 @@
                     onFrame: async () => {
                         await pose.send({ image: videoElement });
                     },
-                    width: 640,
-                    height: 480
+                    width: 1280,
+                    height: 720
                 });
                 try {
                     camera.start();
@@ -1484,10 +1748,8 @@
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
                 if (results.poseLandmarks) {
-                    // Draw Skeleton
-                    drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#38bdf8', lineWidth: 2 });
-                    drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#22c55e', lineWidth: 1, radius: 3 });
-
+                    // IMPORTANT: Pose is used for detection only.
+                    // Do NOT draw skeleton/landmarks/lines on screen.
                     // Calculate Body Centroid (Left Shoulder = 11, Right Shoulder = 12)
                     const leftShoulder = results.poseLandmarks[11];
                     const rightShoulder = results.poseLandmarks[12];
