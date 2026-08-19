@@ -75,7 +75,7 @@
     </div>
   </section>
 
-  <!-- ============ GAME ============ -->
+  <!-- ============ GAME (โจทย์และคำตอบรวมอยู่ในกล้อง) ============ -->
   <section id="screen-game" class="screen">
     <div class="game-hud">
       <div class="hud-left">
@@ -100,8 +100,15 @@
       <div id="timer-num" class="timer-num">30</div>
     </div>
 
-    <div class="game-body">
-      <div class="question-console">
+    <!-- MAIN CAMERA CONTAINER & OVERLAYS -->
+    <div id="cam-wrap" class="cam-wrap">
+      <!-- 1. Background Feed & Pose Skeleton Canvas -->
+      <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
+      <canvas id="cam-canvas" class="cam-canvas" width="640" height="480"></canvas>
+      <div id="cam-status" class="cam-status"></div>
+
+      <!-- 2. OVERLAY บน: กล่องโจทย์ (Question Console) -->
+      <div class="question-console camera-overlay-top">
         <div class="console-glow"></div>
         <div id="question-prompt" class="question-prompt"></div>
         <div class="hint-row">
@@ -110,27 +117,23 @@
         </div>
       </div>
 
-      <div id="cam-wrap" class="cam-wrap">
-        <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
-        <canvas id="cam-canvas" class="cam-canvas" width="480" height="360"></canvas>
-        <div id="cam-status" class="cam-status"></div>
-        <button id="btn-cam-retry" class="btn btn-secondary cam-retry" style="display:none">🔄 ลองเปิดกล้องอีกครั้ง</button>
+      <!-- 3. OVERLAY ล่าง: โซนเลือกคำตอบ (A / B / C Runway) -->
+      <div class="runway camera-overlay-bottom">
+        <div id="zone-a" class="zone zone-a" data-choice="A">
+          <div class="zone-arrow">←</div>
+          <button id="choice-a" class="choice-btn"></button>
+        </div>
+        <div id="zone-b" class="zone zone-b" data-choice="B">
+          <div class="zone-arrow">↑</div>
+          <button id="choice-b" class="choice-btn"></button>
+        </div>
+        <div id="zone-c" class="zone zone-c" data-choice="C">
+          <div class="zone-arrow">→</div>
+          <button id="choice-c" class="choice-btn"></button>
+        </div>
       </div>
-    </div>
 
-    <div class="runway">
-      <div id="zone-a" class="zone zone-a" data-choice="A">
-        <div class="zone-arrow">←</div>
-        <button id="choice-a" class="choice-btn"></button>
-      </div>
-      <div id="zone-b" class="zone zone-b" data-choice="B">
-        <div class="zone-arrow">↑</div>
-        <button id="choice-b" class="choice-btn"></button>
-      </div>
-      <div id="zone-c" class="zone zone-c" data-choice="C">
-        <div class="zone-arrow">→</div>
-        <button id="choice-c" class="choice-btn"></button>
-      </div>
+      <button id="btn-cam-retry" class="btn btn-secondary cam-retry" style="display:none">🔄 ลองเปิดกล้องอีกครั้ง</button>
     </div>
 
     <div id="feedback-layer" class="feedback-layer"></div>
