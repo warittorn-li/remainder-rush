@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REMAINDER RUSH: ภารกิจพิชิตค่า C</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+    <!-- MediaPipe Pose and Camera Utils Scripts via CDN (HTTPS Compliant) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-color: #060913;
+            --panel-bg: rgba(14, 23, 42, 0.85);
+            --panel-border: rgba(56, 189, 248, 0.3);
+            --primary-cyan: #38bdf8;
+            --accent-magenta: #f43f5e;
+            --neon-green: #22c55e;
+            --neon-yellow: #eab308;
+            --neon-purple: #a855f7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-title: 'Chakra Petch', sans-serif;
+            --font-body: 'Sarabun', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #appContainer {
+            position: relative;
+            width: 1280px;
+            height: 720px;
+            background: rgba(6, 11, 25, 0.9);
+            border: 2px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.2), inset 0 0 30px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            padding: 24px;
+            z-index: 2;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--panel-border);
+            margin-bottom: 16px;
+        }
+
+        .brand-logo {
+            font-family: var(--font-title);
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-cyan);
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-futuristic {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(168, 85, 247, 0.2));
+            border: 1px solid var(--primary-cyan);
+            color: var(--text-main);
+            font-family: var(--font-title);
+            font-size: 16px;
+            font-weight: 600;
+            padding: 10px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.1);
+        }
+
+        .btn-futuristic:hover {
+            background: linear-gradient(135deg, var(--primary-cyan), var(--neon-purple));
+            color: #000;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-futuristic.secondary {
+            border-color: var(--text-muted);
+            background: rgba(30, 41, 59, 0.6);
+        }
+
+        .btn-futuristic.secondary:hover {
+            border-color: var(--text-main);
+            background: rgba(51, 65, 85, 0.9);
+            color: #fff;
+        }
+
+        #menuScreen {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle at center, rgba(30, 58, 138, 0.3) 0%, rgba(6, 9, 19, 0.95) 70%);
+        }
+
+        .hero-title {
+            font-family: var(--font-title);
+            font-size: 64px;
+            font-weight: 700;
+            background: linear-gradient(180deg, #ffffff 0%, var(--primary-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .hero-subtitle {
+            font-size: 22px;
+            color: var(--neon-yellow);
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 220px);
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .tutorial-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            height: calc(100% - 70px);
+        }
+
+        .tutorial-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tutorial-card h3 {
+            font-family: var(--font-title);
+            color: var(--primary-cyan);
+            font-size: 20px;
+        }
+
+        .step-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .step-list li {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 10px 14px;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-cyan);
+            font-size: 15px;
+        }
+
+        .pose-demo-box {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            background: #020617;
+            border-radius: 8px;
+            border: 1px dashed var(--panel-border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .demo-zone {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px dashed rgba(255,255,255,0.1);
+            font-family: var(--font-title);
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .demo-zone.active {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--primary-cyan);
+        }
+
+        #gameScreen {
+            padding: 16px 24px;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--font-title);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: var(--font-title);
+            color: var(--primary-cyan);
+        }
+
+        .timer-bar-container {
+            width: 280px;
+            height: 12px;
+            background: #0f172a;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+            margin-top: 4px;
+        }
+
+        .timer-bar-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-yellow));
+            transition: width 0.3s linear, background 0.3s ease;
+        }
+
+        .timer-bar-fill.warning {
+            background: var(--accent-magenta);
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+
+        .game-body {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 16px;
+            height: calc(100% - 90px);
+        }
+
+        .question-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .level-badge {
+            display: inline-block;
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid var(--neon-purple);
+            color: var(--neon-purple);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: var(--font-title);
+            font-size: 14px;
+            margin-bottom: 8px;
+            align-self: flex-start;
+        }
+
+        .question-text {
+            font-size: 26px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .math-display {
+            background: #020617;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 16px;
+            border-radius: 8px;
+            font-family: var(--font-title);
+            font-size: 28px;
+            color: var(--neon-yellow);
+            text-align: center;
+            margin-bottom: 16px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .camera-panel {
+            background: #020617;
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #webcamVideo {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            opacity: 0.6;
+        }
+
+        #poseCanvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+            z-index: 2;
+        }
+
+        .camera-overlay-hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            pointer-events: none;
+        }
+
+        .hud-zone {
+            border-right: 1px dashed rgba(56, 189, 248, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 12px;
+            transition: background 0.2s ease;
+        }
+
+        .hud-zone:last-child {
+            border-right: none;
+        }
+
+        .hud-zone.hovered {
+            background: rgba(56, 189, 248, 0.25);
+        }
+
+        .hud-zone.locked {
+            background: rgba(34, 197, 94, 0.4);
+        }
+
+        .zone-tag {
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--primary-cyan);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: var(--font-title);
+            font-size: 12px;
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .option-card {
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            min-height: 110px;
+        }
+
+        .option-card.active-target {
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            transform: scale(1.02);
+        }
+
+        .option-card.selected-lock {
+            border-color: var(--neon-green);
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .option-key {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 24px;
+            height: 24px;
+            background: rgba(56, 189, 248, 0.2);
+            border: 1px solid var(--primary-cyan);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-title);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary-cyan);
+        }
+
+        .option-val {
+            font-size: 22px;
+            font-weight: 700;
+            font-family: var(--font-title);
+            color: #fff;
+            text-align: center;
+        }
+
+        .lock-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            width: 0%;
+            background: var(--neon-green);
+            transition: width 0.1s linear;
+        }
+
+        .feedback-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(6, 9, 19, 0.92);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 30px;
+            text-align: center;
+            border-radius: 12px;
+        }
+
+        .feedback-overlay.active {
+            display: flex;
+        }
+
+        .feedback-title {
+            font-family: var(--font-title);
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .feedback-title.correct {
+            color: var(--neon-green);
+            text-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+        }
+
+        .feedback-title.wrong {
+            color: var(--accent-magenta);
+            text-shadow: 0 0 20px rgba(244, 63, 94, 0.6);
+        }
+
+        .solution-box {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--panel-border);
+            padding: 16px 24px;
+            border-radius: 8px;
+            margin: 16px 0;
+            max-width: 650px;
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .dash-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .error-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .error-table th, .error-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--panel-border);
+            text-align: left;
+        }
+
+        .error-table th {
+            color: var(--primary-cyan);
+            font-family: var(--font-title);
+        }
+
+        .fallback-bar {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+            z-index: 5;
+        }
+
+        .combo-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-family: var(--font-title);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 15px var(--neon-yellow);
+            animation: bounce 0.4s ease infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: scale(1); }
+            to { transform: scale(1.15); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bgCanvas"></canvas>
+
+    <div id="appContainer">
+
+        <!-- 1. MAIN MENU SCREEN -->
+        <div id="menuScreen" class="screen active">
+            <h1 class="hero-title">REMAINDER RUSH</h1>
+            <p class="hero-subtitle">ภารกิจพิชิตค่า C (Remainder Theorem VR/Pose Edition)</p>
+            
+            <div class="menu-grid">
+                <button class="btn-futuristic" onclick="GameApp.startStoryGame()"><i class="fa-solid fa-play"></i> START GAME</button>
+                <button class="btn-futuristic secondary" onclick="GameApp.startPracticeMode()"><i class="fa-solid fa-graduation-cap"></i> PRACTICE</button>
+                <button class="btn-futuristic secondary" onclick="GameApp.showScreen('tutorialScreen')"><i class="fa-solid fa-circle-question"></i> HOW TO PLAY</button>
+                <button class="btn-futuristic secondary" onclick="GameApp.showDashboard()"><i class="fa-solid fa-chart-pie"></i> DASHBOARD</button>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; gap: 15px; align-items: center; justify-content: center;">
+                <button class="btn-futuristic secondary" style="font-size: 13px; padding: 6px 16px;" onclick="GameApp.toggleCameraInput()">
+                    <i id="cameraStatusIcon" class="fa-solid fa-camera"></i> <span id="cameraStatusTxt">Mode: Body Pose (Webcam)</span>
+                </button>
+                <button class="btn-futuristic secondary" style="font-size: 13px; padding: 6px 16px;" onclick="SoundEngine.toggleMute()">
+                    <i id="soundIcon" class="fa-solid fa-volume-high"></i> Sound: ON
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. TUTORIAL SCREEN -->
+        <div id="tutorialScreen" class="screen">
+            <div class="app-header">
+                <div class="brand-logo"><i class="fa-solid fa-book-open"></i> HOW TO PLAY: กติกาและการตอบคำถาม</div>
+                <button class="btn-futuristic secondary" onclick="GameApp.showScreen('menuScreen')"><i class="fa-solid fa-house"></i> MAIN MENU</button>
+            </div>
+
+            <div class="tutorial-grid">
+                <div class="tutorial-card">
+                    <h3><i class="fa-solid fa-calculator"></i> ขั้นตอนการแก้โจทย์ทฤษฎีบทเศษเหลือ</h3>
+                    <ul class="step-list">
+                        <li><strong>ขั้นที่ 1:</strong> อ่านตัวหาร (x - a) แล้วหาค่า a</li>
+                        <li><strong>ขั้นที่ 2:</strong> ใช้ทฤษฎีบทเศษเหลือ: "ถ้าหาร P(x) ด้วย x-a แล้วเหลือเศษ r จะได้ P(a) = r"</li>
+                        <li><strong>ขั้นที่ 3:</strong> แทนค่า x = a ในพหุนาม P(x)</li>
+                        <li><strong>ขั้นที่ 4:</strong> ตั้งสมการแก้หาค่าตัวแปร C</li>
+                        <li><strong>ขั้นที่ 5:</strong> เคลื่อนตัวเลือกคำตอบที่ถูกต้องภายใน 30 วินาที!</li>
+                    </ul>
+                </div>
+
+                <div class="tutorial-card">
+                    <h3><i class="fa-solid fa-person-rays"></i> ควบคุมเกมด้วยร่างกาย (Body Motion)</h3>
+                    <p style="font-size: 14px; color: var(--text-muted);">
+                        เอียงตัวหรือขยับลำตัวไปทางซ้าย กึ่งกลาง หรือขวาของกล้อง Webcam ค้างไว้ 1 วินาทีเพื่อเลือกคำตอบ
+                    </p>
+
+                    <div class="pose-demo-box">
+                        <div class="demo-zone">
+                            <span>← A</span>
+                            <small>LEFT ZONE</small>
+                        </div>
+                        <div class="demo-zone active">
+                            <span>B</span>
+                            <small>CENTER</small>
+                        </div>
+                        <div class="demo-zone">
+                            <span>C →</span>
+                            <small>RIGHT ZONE</small>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 13px; color: var(--neon-yellow); background: rgba(234, 179, 8, 0.1); padding: 8px 12px; border-radius: 6px;">
+                        <i class="fa-solid fa-keyboard"></i> <strong>สำรอง:</strong> หากไม่ใช้กล้อง สามารถกดแป้นพิมพ์ <code>A</code>, <code>B</code>, <code>C</code> หรือใช้เมาส์คลิกได้เช่นกัน
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. GAMEPLAY SCREEN -->
+        <div id="gameScreen" class="screen">
+            <div class="hud-top">
+                <div class="stat-box">
+                    <span class="stat-label">QUESTION</span>
+                    <span class="stat-value" id="hudQuestionIdx">1 / 20</span>
+                </div>
+
+                <div class="stat-box">
+                    <span class="stat-label">TIME REMAINING</span>
+                    <span class="stat-value" id="hudTimerTxt">30s</span>
+                    <div class="timer-bar-container">
+                        <div id="timerBarFill" class="timer-bar-fill"></div>
+                    </div>
+                </div>
+
+                <div class="stat-box">
+                    <span class="stat-label">SCORE</span>
+                    <span class="stat-value" id="hudScoreTxt">0</span>
+                </div>
+
+                <div class="stat-box">
+                    <span class="stat-label">COMBO</span>
+                    <span class="stat-value" id="hudComboTxt" style="color: var(--neon-yellow);">x0</span>
+                </div>
+
+                <button class="btn-futuristic secondary" style="padding: 6px 12px; font-size: 13px;" onclick="GameApp.useHint()">
+                    <i class="fa-solid fa-lightbulb"></i> HINT (-20)
+                </button>
+            </div>
+
+            <div class="game-body">
+                <div class="question-panel">
+                    <div>
+                        <span class="level-badge" id="hudLevelBadge">LEVEL 1: FIND a</span>
+                        <div class="question-text" id="hudQuestionText">พหุนาม P(x) หารด้วย (x - 3) ถามว่าค่า a คือเท่าใด?</div>
+                        <div class="math-display" id="hudMathDisplay">P(x) ÷ (x - 3)</div>
+                    </div>
+
+                    <div class="options-container">
+                        <div class="option-card" id="optCardA" onclick="GameApp.selectOptionManual('A')">
+                            <div class="option-key">A</div>
+                            <div class="option-val" id="optValA">-3</div>
+                            <div class="lock-progress" id="optProgressA"></div>
+                        </div>
+
+                        <div class="option-card" id="optCardB" onclick="GameApp.selectOptionManual('B')">
+                            <div class="option-key">B</div>
+                            <div class="option-val" id="optValB">3</div>
+                            <div class="lock-progress" id="optProgressB"></div>
+                        </div>
+
+                        <div class="option-card" id="optCardC" onclick="GameApp.selectOptionManual('C')">
+                            <div class="option-key">C</div>
+                            <div class="option-val" id="optValC">0</div>
+                            <div class="lock-progress" id="optProgressC"></div>
+                        </div>
+                    </div>
+
+                    <div id="feedbackOverlay" class="feedback-overlay">
+                        <div id="fbTitle" class="feedback-title correct">🎉 CORRECT!</div>
+                        <div id="fbScoreAdd" style="font-family: var(--font-title); font-size: 20px; color: var(--neon-yellow);">+150 POINTS</div>
+                        <div id="fbSolution" class="solution-box">
+                            วิธีคิด: ตัวหารคือ (x - 3) ดังนั้น a = 3
+                        </div>
+                        <button class="btn-futuristic" onclick="GameApp.nextQuestion()"><i class="fa-solid fa-arrow-right"></i> NEXT QUESTION</button>
+                    </div>
+
+                    <div id="comboBadge" class="combo-badge" style="display: none;">3x COMBO!</div>
+                </div>
+
+                <div class="camera-panel">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <canvas id="poseCanvas"></canvas>
+
+                    <div class="camera-overlay-hud">
+                        <div class="hud-zone" id="zoneA">
+                            <span class="zone-tag">ZONE A (Left)</span>
+                        </div>
+                        <div class="hud-zone" id="zoneB">
+                            <span class="zone-tag">ZONE B (Center)</span>
+                        </div>
+                        <div class="hud-zone" id="zoneC">
+                            <span class="zone-tag">ZONE C (Right)</span>
+                        </div>
+                    </div>
+
+                    <div class="fallback-bar">
+                        <i class="fa-solid fa-video"></i> <span id="cameraActiveLabel">Camera Active</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. DASHBOARD & TEACHER REPORT SCREEN -->
+        <div id="dashboardScreen" class="screen">
+            <div class="app-header">
+                <div class="brand-logo"><i class="fa-solid fa-chart-column"></i> DASHBOARD: สรุปผลการเรียนรู้ & Error Analysis</div>
+                <button class="btn-futuristic secondary" onclick="GameApp.showScreen('menuScreen')"><i class="fa-solid fa-house"></i> MAIN MENU</button>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dash-card">
+                    <div class="stat-label">TOTAL SCORE</div>
+                    <div class="stat-value" id="dashTotalScore" style="font-size: 36px; color: var(--neon-yellow);">1,620</div>
+                </div>
+                <div class="dash-card">
+                    <div class="stat-label">ACCURACY</div>
+                    <div class="stat-value" id="dashAccuracy" style="font-size: 36px; color: var(--neon-green);">80%</div>
+                </div>
+                <div class="dash-card">
+                    <div class="stat-label">AVG RESPONSE TIME</div>
+                    <div class="stat-value" id="dashAvgTime" style="font-size: 36px; color: var(--primary-cyan);">8.4s</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: calc(100% - 180px);">
+                <div class="dash-card" style="align-items: stretch;">
+                    <h3 style="font-family: var(--font-title); color: var(--primary-cyan); margin-bottom: 10px;">ความเชี่ยวชาญรายระดับ (Level Progress)</h3>
+                    <div id="levelProgressList" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;"></div>
+                </div>
+
+                <div class="dash-card" style="align-items: stretch; overflow-y: auto;">
+                    <h3 style="font-family: var(--font-title); color: var(--accent-magenta); margin-bottom: 10px;">วิเคราะห์จุดผิดพลาด (Error Classification)</h3>
+                    <table class="error-table">
+                        <thead>
+                            <tr>
+                                <th>ประเภทความเข้าใจผิด</th>
+                                <th>จำนวนครั้ง</th>
+                                <th>คำแนะนำเพื่อการแก้ไข</th>
+                            </tr>
+                        </thead>
+                        <tbody id="errorAnalysisTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AUDIO SYNTHESIZER ENGINE -->
+    <script>
+        const SoundEngine = (() => {
+            let audioCtx = null;
+            let isMuted = false;
+
+            function initCtx() {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            function playTone(freq, type, duration, vol = 0.1) {
+                if (isMuted) return;
+                try {
+                    initCtx();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + duration);
+                } catch(e) {}
+            }
+
+            return {
+                playClick: () => playTone(600, 'sine', 0.08, 0.05),
+                playCorrect: () => {
+                    playTone(523.25, 'triangle', 0.12, 0.1);
+                    setTimeout(() => playTone(659.25, 'triangle', 0.12, 0.1), 100);
+                    setTimeout(() => playTone(783.99, 'triangle', 0.25, 0.1), 200);
+                },
+                playWrong: () => {
+                    playTone(220, 'sawtooth', 0.15, 0.1);
+                    setTimeout(() => playTone(180, 'sawtooth', 0.25, 0.1), 120);
+                },
+                playLocking: () => playTone(440, 'sine', 0.05, 0.03),
+                playCombo: () => playTone(880, 'sine', 0.2, 0.12),
+                toggleMute: () => {
+                    isMuted = !isMuted;
+                    document.getElementById('soundIcon').className = isMuted ? "fa-solid fa-volume-xmark" : "fa-solid fa-volume-high";
+                    document.getElementById('soundIcon').parentNode.childNodes[2].nodeValue = isMuted ? " Sound: OFF" : " Sound: ON";
+                }
+            };
+        })();
+    </script>
+
+    <!-- MAIN GAME LOGIC -->
+    <script>
+        const QuestionBank = {
+            generateQuestions: () => {
+                const list = [];
+
+                const l1Data = [
+                    { div: '(x - 3)', a: 3, opts: [-3, 3, 0] },
+                    { div: '(x + 2)', a: -2, opts: [2, -2, -1] },
+                    { div: '(x - 5)', a: 5, opts: [-5, 5, 1] },
+                    { div: '(x + 4)', a: -4, opts: [-4, 4, 0] },
+                    { div: '(x - 1)', a: 1, opts: [-1, 1, 2] }
+                ];
+                l1Data.forEach((d) => {
+                    list.push({
+                        level: 1,
+                        levelTitle: "LEVEL 1: FIND a",
+                        text: `พหุนาม P(x) ถูกหารด้วย ${d.div} ค่าตัวหาร (a) ตามทฤษฎีบทเศษเหลือ P(a) คือเท่าใด?`,
+                        mathDisplay: `P(x) ÷ ${d.div}`,
+                        correctAnswer: String(d.a),
+                        options: d.opts.map(String),
+                        solution: `จากตัวหาร ${d.div} จัดให้อยู่ในรูป (x - a) จะได้ a = ${d.a}`,
+                        hint: "พิจารณาเปลี่ยนเครื่องหมายตรงข้ามกับตัวเลขในพจน์ตัวหาร (x - a)"
+                    });
+                });
+
+                const l2Data = [
+                    { poly: "P(x) = 2x² + 3x + C", div: "(x - 2)", r: 5, correct: "P(2) = 5", opts: ["P(2) = 5", "P(-2) = 5", "P(5) = 2"] },
+                    { poly: "P(x) = x³ - x² + C", div: "(x + 1)", r: 4, correct: "P(-1) = 4", opts: ["P(-1) = 4", "P(1) = 4", "P(4) = -1"] },
+                    { poly: "P(x) = 3x² - 5x + C", div: "(x - 3)", r: 12, correct: "P(3) = 12", opts: ["P(3) = 12", "P(-3) = 12", "P(12) = 3"] },
+                    { poly: "P(x) = x² + 4x + C", div: "(x + 3)", r: 2, correct: "P(-3) = 2", opts: ["P(-3) = 2", "P(3) = 2", "P(2) = -3"] },
+                    { poly: "P(x) = 2x² + C", div: "(x - 4)", r: 10, correct: "P(4) = 10", opts: ["P(4) = 10", "P(-4) = 10", "P(10) = 4"] }
+                ];
+                l2Data.forEach((d) => {
+                    list.push({
+                        level: 2,
+                        levelTitle: "LEVEL 2: SUBSTITUTE P(a) = r",
+                        text: `กำหนด ${d.poly} หารด้วย ${d.div} เหลือเศษ ${d.r} นิพจน์ที่ถูกต้องคือข้อใด?`,
+                        mathDisplay: `${d.poly}  หารด้วย  ${d.div}  เหลือเศษ  ${d.r}`,
+                        correctAnswer: d.correct,
+                        options: d.opts,
+                        solution: `ตามทฤษฎีบทเศษเหลือ ถ้าหาร P(x) ด้วย (x - a) เหลือเศษ r จะได้ P(a) = r`,
+                        hint: "นำค่า a จากตัวหารไปแทนในสัญลักษณ์ P(a) แล้วจับเท่ากับเศษ r"
+                    });
+                });
+
+                const l3Data = [
+                    { poly: "P(x) = x² + 3x + C", div: "(x - 2)", r: 6, c: -4, opts: [-4, 4, 6] },
+                    { poly: "P(x) = 2x² - x + C", div: "(x - 1)", r: 5, c: 4, opts: [4, -4, 5] },
+                    { poly: "P(x) = x² + 2x + C", div: "(x + 2)", r: 3, c: 3, opts: [3, -3, 0] },
+                    { poly: "P(x) = 3x² - 4x + C", div: "(x - 2)", r: 10, c: 6, opts: [6, -6, 4] },
+                    { poly: "P(x) = x² - 5x + C", div: "(x + 1)", r: 8, c: 2, opts: [2, 8, -2] },
+                    { poly: "P(x) = 2x² + 3x + C", div: "(x - 3)", r: 20, c: -7, opts: [-7, 7, 20] },
+                    { poly: "P(x) = x² + C", div: "(x - 5)", r: 30, c: 5, opts: [5, -5, 30] }
+                ];
+                l3Data.forEach((d) => {
+                    list.push({
+                        level: 3,
+                        levelTitle: "LEVEL 3: FIND VALUE C",
+                        text: `กำหนด ${d.poly} หารด้วย ${d.div} เหลือเศษ ${d.r} จงหาค่า C`,
+                        mathDisplay: `${d.poly},   r = ${d.r}`,
+                        correctAnswer: String(d.c),
+                        options: d.opts.map(String),
+                        solution: `P(a) = r ⟹ แทนค่าแก้สมการได้ C = ${d.c}`,
+                        hint: "แทนค่า x = a ลงใน P(x) แล้วแก้สมการหา C"
+                    });
+                });
+
+                const l4Data = [
+                    { poly: "P(x) = 2x³ - 3x² + 4x + C", div: "(x + 1)", r: 5, c: 14, opts: [14, -14, 5] },
+                    { poly: "P(x) = x³ + 2x² - 5x + C", div: "(x - 2)", r: 12, c: 6, opts: [6, -6, 12] },
+                    { poly: "P(x) = -x³ + 3x² + C", div: "(x + 2)", r: 10, c: -10, opts: [-10, 10, 20] }
+                ];
+                l4Data.forEach((d) => {
+                    list.push({
+                        level: 4,
+                        levelTitle: "LEVEL 4: BOSS C CHALLENGE 🔥",
+                        text: `[BOSS] กำหนด ${d.poly} หารด้วย ${d.div} เหลือเศษ ${d.r} จงหาค่า C`,
+                        mathDisplay: `${d.poly},   r = ${d.r}`,
+                        correctAnswer: String(d.c),
+                        options: d.opts.map(String),
+                        solution: `ระวังเครื่องหมายลบเมื่อยกกำลังสาม! แทนค่าแล้วได้ C = ${d.c}`,
+                        hint: "ข้อนี้เป็นพหุนามกำลังสาม อย่าลืมระวังเครื่องหมายติดลบเมื่อแทนค่า x"
+                    });
+                });
+
+                return list;
+            }
+        };
+
+        const GameApp = (() => {
+            let questions = [];
+            let currentIdx = 0;
+            let score = 0;
+            let combo = 0;
+            let timer = 30;
+            let timerInterval = null;
+            let mode = 'STORY';
+            let isPoseMode = true;
+
+            let hoveredZone = null;
+            let hoverStartTime = null;
+            const LOCK_DURATION_MS = 1000;
+            let isOptionLocked = false;
+            let responseLog = [];
+
+            function showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(screenId).classList.add('active');
+                SoundEngine.playClick();
+            }
+
+            function startStoryGame() {
+                mode = 'STORY';
+                questions = QuestionBank.generateQuestions();
+                currentIdx = 0;
+                score = 0;
+                combo = 0;
+                responseLog = [];
+                showScreen('gameScreen');
+                loadQuestion();
+                if (isPoseMode) PoseTracker.startCamera();
+            }
+
+            function startPracticeMode() {
+                mode = 'PRACTICE';
+                questions = QuestionBank.generateQuestions();
+                currentIdx = 0;
+                score = 0;
+                combo = 0;
+                showScreen('gameScreen');
+                loadQuestion();
+                if (isPoseMode) PoseTracker.startCamera();
+            }
+
+            function loadQuestion() {
+                isOptionLocked = false;
+                hoveredZone = null;
+                hoverStartTime = null;
+                resetOptionCards();
+
+                document.getElementById('feedbackOverlay').classList.remove('active');
+                document.getElementById('comboBadge').style.display = 'none';
+
+                const q = questions[currentIdx];
+                document.getElementById('hudQuestionIdx').innerText = `${currentIdx + 1} / ${questions.length}`;
+                document.getElementById('hudScoreTxt').innerText = score;
+                document.getElementById('hudComboTxt').innerText = `x${combo}`;
+                document.getElementById('hudLevelBadge').innerText = q.levelTitle;
+                document.getElementById('hudQuestionText').innerText = q.text;
+                document.getElementById('hudMathDisplay').innerText = q.mathDisplay;
+
+                const shuffledOpts = [...q.options].sort(() => Math.random() - 0.5);
+                document.getElementById('optValA').innerText = shuffledOpts[0];
+                document.getElementById('optValB').innerText = shuffledOpts[1];
+                document.getElementById('optValC').innerText = shuffledOpts[2];
+
+                clearInterval(timerInterval);
+                timer = 30;
+                updateTimerUI();
+                timerInterval = setInterval(() => {
+                    timer--;
+                    updateTimerUI();
+                    if (timer <= 0) {
+                        clearInterval(timerInterval);
+                        handleTimeout();
+                    }
+                }, 1000);
+            }
+
+            function updateTimerUI() {
+                document.getElementById('hudTimerTxt').innerText = `${timer}s`;
+                const fill = document.getElementById('timerBarFill');
+                const pct = (timer / 30) * 100;
+                fill.style.width = `${pct}%`;
+                if (timer <= 10) {
+                    fill.classList.add('warning');
+                } else {
+                    fill.classList.remove('warning');
+                }
+            }
+
+            function resetOptionCards() {
+                ['A', 'B', 'C'].forEach(k => {
+                    const card = document.getElementById(`optCard${k}`);
+                    card.className = 'option-card';
+                    document.getElementById(`optProgress${k}`).style.width = '0%';
+                });
+                ['zoneA', 'zoneB', 'zoneC'].forEach(z => {
+                    document.getElementById(z).className = 'hud-zone';
+                });
+            }
+
+            function updateHoverZone(zone) {
+                if (isOptionLocked) return;
+
+                if (zone !== hoveredZone) {
+                    hoveredZone = zone;
+                    hoverStartTime = zone ? Date.now() : null;
+                    resetOptionCards();
+                    if (zone) SoundEngine.playLocking();
+                }
+
+                if (hoveredZone) {
+                    const elapsed = Date.now() - hoverStartTime;
+                    const pct = Math.min(100, (elapsed / LOCK_DURATION_MS) * 100);
+
+                    const cardKey = hoveredZone;
+                    document.getElementById(`optCard${cardKey}`).classList.add('active-target');
+                    document.getElementById(`optProgress${cardKey}`).style.width = `${pct}%`;
+                    document.getElementById(`zone${cardKey}`).classList.add('hovered');
+
+                    if (elapsed >= LOCK_DURATION_MS) {
+                        isOptionLocked = true;
+                        lockAndSubmitAnswer(cardKey);
+                    }
+                }
+            }
+
+            function selectOptionManual(optKey) {
+                if (isOptionLocked) return;
+                isOptionLocked = true;
+                lockAndSubmitAnswer(optKey);
+            }
+
+            function lockAndSubmitAnswer(optKey) {
+                clearInterval(timerInterval);
+                const selectedValue = document.getElementById(`optVal${optKey}`).innerText;
+                const q = questions[currentIdx];
+                const isCorrect = selectedValue === q.correctAnswer;
+
+                document.getElementById(`optCard${optKey}`).classList.add('selected-lock');
+                document.getElementById(`zone${optKey}`).classList.add('locked');
+
+                let errorType = 'CORRECT';
+                if (!isCorrect) {
+                    if (selectedValue === String(-Number(q.correctAnswer))) {
+                        errorType = 'SIGN_ERROR';
+                    } else if (q.level === 1) {
+                        errorType = 'SUBSTITUTION_ERROR';
+                    } else {
+                        errorType = 'ALGEBRA_ERROR';
+                    }
+                }
+
+                responseLog.push({
+                    qIdx: currentIdx,
+                    level: q.level,
+                    isCorrect: isCorrect,
+                    responseTime: 30 - timer,
+                    errorType: errorType
+                });
+
+                let earned = 0;
+                if (isCorrect) {
+                    earned = 100;
+                    if (30 - timer <= 10) earned += 50;
+                    combo++;
+                    score += earned * (combo >= 3 ? 1.5 : 1);
+                    SoundEngine.playCorrect();
+
+                    if (combo >= 3) {
+                        document.getElementById('comboBadge').innerText = `${combo}x COMBO!`;
+                        document.getElementById('comboBadge').style.display = 'block';
+                        SoundEngine.playCombo();
+                    }
+                } else {
+                    combo = 0;
+                    score = Math.max(0, score - 20);
+                    SoundEngine.playWrong();
+                }
+
+                setTimeout(() => {
+                    const fb = document.getElementById('feedbackOverlay');
+                    const fbTitle = document.getElementById('fbTitle');
+                    const fbScoreAdd = document.getElementById('fbScoreAdd');
+                    const fbSol = document.getElementById('fbSolution');
+
+                    if (isCorrect) {
+                        fbTitle.innerText = "🎉 CORRECT!";
+                        fbTitle.className = "feedback-title correct";
+                        fbScoreAdd.innerText = `+${earned} POINTS`;
+                        fbSol.innerText = `วิธีคิด: ${q.solution}`;
+                    } else {
+                        fbTitle.innerText = "❌ TRY AGAIN";
+                        fbTitle.className = "feedback-title wrong";
+                        fbScoreAdd.innerText = `-20 POINTS`;
+                        fbSol.innerText = `จุดที่ต้องระวัง: ${q.hint}\nเฉลยที่ถูกต้องคือ ${q.correctAnswer}`;
+                    }
+                    fb.classList.add('active');
+                }, 500);
+            }
+
+            function handleTimeout() {
+                SoundEngine.playWrong();
+                responseLog.push({
+                    qIdx: currentIdx,
+                    level: questions[currentIdx].level,
+                    isCorrect: false,
+                    responseTime: 30,
+                    errorType: 'TIMEOUT'
+                });
+
+                const fb = document.getElementById('feedbackOverlay');
+                document.getElementById('fbTitle').innerText = "⏰ TIME OUT!";
+                document.getElementById('fbTitle').className = "feedback-title wrong";
+                document.getElementById('fbScoreAdd').innerText = "+0 POINTS";
+                document.getElementById('fbSolution').innerText = `หมดเวลา! เฉลยคำตอบคือ ${questions[currentIdx].correctAnswer}`;
+                fb.classList.add('active');
+            }
+
+            function nextQuestion() {
+                currentIdx++;
+                if (currentIdx < questions.length) {
+                    loadQuestion();
+                } else {
+                    showDashboard();
+                }
+            }
+
+            function useHint() {
+                if (score >= 20) {
+                    score -= 20;
+                    document.getElementById('hudScoreTxt').innerText = score;
+                    alert(`💡 HINT: ${questions[currentIdx].hint}`);
+                } else {
+                    alert("คะแนนไม่เพียงพอสำหรับการใช้ Hint (-20)");
+                }
+            }
+
+            function showDashboard() {
+                showScreen('dashboardScreen');
+                const total = responseLog.length || 1;
+                const correctCount = responseLog.filter(r => r.isCorrect).length;
+                const accuracy = Math.round((correctCount / total) * 100);
+                const avgTime = (responseLog.reduce((acc, r) => acc + r.responseTime, 0) / total).toFixed(1);
+
+                document.getElementById('dashTotalScore').innerText = score;
+                document.getElementById('dashAccuracy').innerText = `${accuracy}%`;
+                document.getElementById('dashAvgTime').innerText = `${avgTime}s`;
+
+                const lvlContainer = document.getElementById('levelProgressList');
+                lvlContainer.innerHTML = '';
+                [1, 2, 3, 4].forEach(lvl => {
+                    const lvlLogs = responseLog.filter(r => r.level === lvl);
+                    const lvlCorrect = lvlLogs.filter(r => r.isCorrect).length;
+                    const lvlPct = lvlLogs.length ? Math.round((lvlCorrect / lvlLogs.length) * 100) : 0;
+
+                    lvlContainer.innerHTML += `
+                        <div>
+                            <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px;">
+                                <span>LEVEL ${lvl} Mastery</span>
+                                <span>${lvlPct}%</span>
+                            </div>
+                            <div style="height:8px; background:#0f172a; border-radius:4px; overflow:hidden;">
+                                <div style="width:${lvlPct}%; height:100%; background:var(--primary-cyan);"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                const tbody = document.getElementById('errorAnalysisTableBody');
+                tbody.innerHTML = '';
+                const errors = {
+                    'SIGN_ERROR': { title: 'สับสนเครื่องหมาย ±', advice: 'ทบทวนการเปลี่ยนเครื่องหมายตัวหาร (x - a)' },
+                    'SUBSTITUTION_ERROR': { title: 'แทนค่าพหุนามผิดพจน์', advice: 'ฝึกแทนค่า x = a ให้ครบทุกพจน์' },
+                    'ALGEBRA_ERROR': { title: 'คำนวณพีชคณิตผิดพลาด', advice: 'ระวังการยกกำลังสามและลำดับการคำนวณ' },
+                    'TIMEOUT': { title: 'หมดเวลา', advice: 'ฝึกการคิดเลขในใจอย่างรวดเร็ว' }
+                };
+
+                Object.keys(errors).forEach(errKey => {
+                    const cnt = responseLog.filter(r => r.errorType === errKey).length;
+                    if (cnt > 0) {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${errors[errKey].title}</td>
+                                <td>${cnt} ครั้ง</td>
+                                <td>${errors[errKey].advice}</td>
+                            </tr>
+                        `;
+                    }
+                });
+                if (tbody.innerHTML === '') {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--neon-green);">ไม่พบความผิดพลาด สมบูรณ์แบบมาก!</td></tr>';
+                }
+            }
+
+            function toggleCameraInput() {
+                isPoseMode = !isPoseMode;
+                document.getElementById('cameraStatusTxt').innerText = isPoseMode ? "Mode: Body Pose (Webcam)" : "Mode: Mouse/Touch Fallback";
+                document.getElementById('cameraStatusIcon').className = isPoseMode ? "fa-solid fa-camera" : "fa-solid fa-hand-pointer";
+                if (isPoseMode) {
+                    PoseTracker.startCamera();
+                } else {
+                    PoseTracker.stopCamera();
+                }
+            }
+
+            return {
+                showScreen,
+                startStoryGame,
+                startPracticeMode,
+                nextQuestion,
+                useHint,
+                selectOptionManual,
+                updateHoverZone,
+                showDashboard,
+                toggleCameraInput
+            };
+        })();
+
+        // MEDIAPIPE POSE ENGINE
+        const PoseTracker = (() => {
+            let camera = null;
+            let pose = null;
+            const videoElement = document.getElementById('webcamVideo');
+            const canvasElement = document.getElementById('poseCanvas');
+            const canvasCtx = canvasElement.getContext('2d');
+
+            function initPose() {
+                if (pose) return;
+
+                pose = new Pose({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+                });
+
+                pose.setOptions({
+                    modelComplexity: 1,
+                    smoothLandmarks: true,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                pose.onResults(onResults);
+            }
+
+            function startCamera() {
+                initPose();
+                if (camera) return;
+
+                camera = new Camera(videoElement, {
+                    onFrame: async () => {
+                        await pose.send({ image: videoElement });
+                    },
+                    width: 640,
+                    height: 480
+                });
+                camera.start();
+                document.getElementById('cameraActiveLabel').innerText = "Pose Camera Active";
+            }
+
+            function stopCamera() {
+                if (camera) {
+                    camera.stop();
+                    camera = null;
+                }
+                document.getElementById('cameraActiveLabel').innerText = "Manual Input Mode";
+            }
+
+            function onResults(results) {
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+                canvasCtx.save();
+                canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+                if (results.poseLandmarks) {
+                    drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#38bdf8', lineWidth: 2 });
+                    drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#22c55e', lineWidth: 1, radius: 3 });
+
+                    const leftShoulder = results.poseLandmarks[11];
+                    const rightShoulder = results.poseLandmarks[12];
+
+                    if (leftShoulder && rightShoulder) {
+                        const bodyX = (leftShoulder.x + rightShoulder.x) / 2;
+                        
+                        let detectedZone = null;
+                        if (bodyX > 0.6) {
+                            detectedZone = 'A';
+                        } else if (bodyX < 0.4) {
+                            detectedZone = 'C';
+                        } else {
+                            detectedZone = 'B';
+                        }
+
+                        GameApp.updateHoverZone(detectedZone);
+                    }
+                } else {
+                    GameApp.updateHoverZone(null);
+                }
+                canvasCtx.restore();
+            }
+
+            return {
+                startCamera,
+                stopCamera
+            };
+        })();
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toUpperCase();
+            if (['A', 'B', 'C'].includes(key)) {
+                GameApp.selectOptionManual(key);
+            }
+        });
+
+        (function initBgCanvas() {
+            const canvas = document.getElementById('bgCanvas');
+            const ctx = canvas.getContext('2d');
+            let stars = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                stars = Array.from({ length: 80 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2,
+                    speed: Math.random() * 0.5 + 0.1
+                }));
+            }
+
+            function animate() {
+                ctx.fillStyle = '#060913';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#38bdf8';
+
+                stars.forEach(s => {
+                    s.y += s.speed;
+                    if (s.y > canvas.height) s.y = 0;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            animate();
+        })();
+    </script>
+</body>
+</html>
