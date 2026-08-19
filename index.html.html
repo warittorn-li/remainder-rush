@@ -4,19 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>REMAINDER RUSH: ภารกิจพิชิตค่า C</title>
-
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
     <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
-
-    <!-- MediaPipe Pose and Camera Utils Scripts via CDN (HTTPS Compliant) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- MediaPipe Pose and Camera Utils Scripts via CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['\\(', '\\)'], ['$', '$']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
 
     <style>
         :root {
@@ -52,6 +57,7 @@
             align-items: center;
         }
 
+        /* Ambient Background Canvas */
         #bgCanvas {
             position: absolute;
             top: 0;
@@ -62,6 +68,7 @@
             pointer-events: none;
         }
 
+        /* App Container */
         #appContainer {
             position: relative;
             width: 1280px;
@@ -76,6 +83,7 @@
             z-index: 1;
         }
 
+        /* Screen Wrapper */
         .screen {
             position: absolute;
             top: 0;
@@ -92,6 +100,7 @@
             display: flex;
         }
 
+        /* Header UI */
         .app-header {
             display: flex;
             justify-content: space-between;
@@ -112,6 +121,12 @@
             gap: 10px;
         }
 
+        .header-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Futuristic Buttons */
         .btn-futuristic {
             background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(168, 85, 247, 0.2));
             border: 1px solid var(--primary-cyan);
@@ -148,6 +163,7 @@
             color: #fff;
         }
 
+        /* Main Menu Layout */
         #menuScreen {
             justify-content: center;
             align-items: center;
@@ -181,6 +197,7 @@
             justify-content: center;
         }
 
+        /* How to Play Screen */
         .tutorial-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -219,6 +236,7 @@
             font-size: 15px;
         }
 
+        /* Pose Simulation Graphic in Tutorial */
         .pose-demo-box {
             position: relative;
             width: 100%;
@@ -250,6 +268,7 @@
             color: var(--primary-cyan);
         }
 
+        /* Game HUD Layout */
         #gameScreen {
             padding: 16px 24px;
         }
@@ -363,6 +382,7 @@
             box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
         }
 
+        /* 3-Zone Answer Overlay & Camera Layout */
         .camera-panel {
             background: #020617;
             border: 1px solid var(--panel-border);
@@ -436,6 +456,7 @@
             font-size: 12px;
         }
 
+        /* Answer Cards (Interactive Body Targets) */
         .options-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -496,6 +517,7 @@
             text-align: center;
         }
 
+        /* Hover Progress Bar in Cards */
         .lock-progress {
             position: absolute;
             bottom: 0;
@@ -506,6 +528,7 @@
             transition: width 0.1s linear;
         }
 
+        /* Feedback Popups */
         .feedback-overlay {
             position: absolute;
             top: 0;
@@ -556,6 +579,7 @@
             line-height: 1.6;
         }
 
+        /* Dashboard & Scoreboard Layout */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -591,6 +615,7 @@
             font-family: var(--font-title);
         }
 
+        /* Fallback Controls Hint */
         .fallback-bar {
             position: absolute;
             bottom: 8px;
@@ -603,6 +628,7 @@
             z-index: 5;
         }
 
+        /* Combo Popup Animation */
         .combo-badge {
             position: absolute;
             top: 20px;
@@ -619,12 +645,56 @@
             from { transform: scale(1); }
             to { transform: scale(1.15); }
         }
+
+        @media (max-width: 1000px) {
+            #appContainer {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .game-body {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+
+            .camera-panel {
+                min-height: 300px;
+            }
+
+            .hero-title {
+                font-size: 42px;
+            }
+
+            .menu-grid {
+                grid-template-columns: 1fr 1fr;
+                width: min(90vw, 460px);
+            }
+        }
+
+        @media (max-width: 650px) {
+            .options-container {
+                grid-template-columns: 1fr;
+            }
+
+            .hud-top {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .timer-bar-container {
+                width: 180px;
+            }
+        }
+
     </style>
 </head>
 <body>
 
+    <!-- Ambient Grid Canvas -->
     <canvas id="bgCanvas"></canvas>
 
+    <!-- App Container -->
     <div id="appContainer">
 
         <!-- 1. MAIN MENU SCREEN -->
@@ -660,10 +730,10 @@
                 <div class="tutorial-card">
                     <h3><i class="fa-solid fa-calculator"></i> ขั้นตอนการแก้โจทย์ทฤษฎีบทเศษเหลือ</h3>
                     <ul class="step-list">
-                        <li><strong>ขั้นที่ 1:</strong> อ่านตัวหาร (x - a) แล้วหาค่า a</li>
-                        <li><strong>ขั้นที่ 2:</strong> ใช้ทฤษฎีบทเศษเหลือ: "ถ้าหาร P(x) ด้วย x-a แล้วเหลือเศษ r จะได้ P(a) = r"</li>
-                        <li><strong>ขั้นที่ 3:</strong> แทนค่า x = a ในพหุนาม P(x)</li>
-                        <li><strong>ขั้นที่ 4:</strong> ตั้งสมการแก้หาค่าตัวแปร C</li>
+                        <li><strong>ขั้นที่ 1:</strong> อ่านตัวหาร \( (x - a) \) แล้วหาค่า \( a \)</li>
+                        <li><strong>ขั้นที่ 2:</strong> ใช้ทฤษฎีบทเศษเหลือ: "ถ้าหาร \( P(x) \) ด้วย \( x-a \) แล้วเหลือเศษ \( r \) จะได้ \( P(a) = r \)"</li>
+                        <li><strong>ขั้นที่ 3:</strong> แทนค่า \( x = a \) ในพหุนาม \( P(x) \)</li>
+                        <li><strong>ขั้นที่ 4:</strong> ตั้งสมการแก้หาค่าตัวแปร \( C \)</li>
                         <li><strong>ขั้นที่ 5:</strong> เคลื่อนตัวเลือกคำตอบที่ถูกต้องภายใน 30 วินาที!</li>
                     </ul>
                 </div>
@@ -698,6 +768,7 @@
 
         <!-- 3. GAMEPLAY SCREEN -->
         <div id="gameScreen" class="screen">
+            <!-- HUD Header -->
             <div class="hud-top">
                 <div class="stat-box">
                     <span class="stat-label">QUESTION</span>
@@ -727,7 +798,9 @@
                 </button>
             </div>
 
+            <!-- Main Interactive Game Body -->
             <div class="game-body">
+                <!-- Left: Question & Options -->
                 <div class="question-panel">
                     <div>
                         <span class="level-badge" id="hudLevelBadge">LEVEL 1: FIND a</span>
@@ -735,6 +808,7 @@
                         <div class="math-display" id="hudMathDisplay">P(x) ÷ (x - 3)</div>
                     </div>
 
+                    <!-- 3 Options -->
                     <div class="options-container">
                         <div class="option-card" id="optCardA" onclick="GameApp.selectOptionManual('A')">
                             <div class="option-key">A</div>
@@ -755,6 +829,7 @@
                         </div>
                     </div>
 
+                    <!-- Feedback Modal -->
                     <div id="feedbackOverlay" class="feedback-overlay">
                         <div id="fbTitle" class="feedback-title correct">🎉 CORRECT!</div>
                         <div id="fbScoreAdd" style="font-family: var(--font-title); font-size: 20px; color: var(--neon-yellow);">+150 POINTS</div>
@@ -767,6 +842,7 @@
                     <div id="comboBadge" class="combo-badge" style="display: none;">3x COMBO!</div>
                 </div>
 
+                <!-- Right: Pose Tracking Camera Feed & Zones -->
                 <div class="camera-panel">
                     <video id="webcamVideo" autoplay playsinline muted></video>
                     <canvas id="poseCanvas"></canvas>
@@ -815,7 +891,9 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: calc(100% - 180px);">
                 <div class="dash-card" style="align-items: stretch;">
                     <h3 style="font-family: var(--font-title); color: var(--primary-cyan); margin-bottom: 10px;">ความเชี่ยวชาญรายระดับ (Level Progress)</h3>
-                    <div id="levelProgressList" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;"></div>
+                    <div id="levelProgressList" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                        <!-- JS injected -->
+                    </div>
                 </div>
 
                 <div class="dash-card" style="align-items: stretch; overflow-y: auto;">
@@ -828,7 +906,9 @@
                                 <th>คำแนะนำเพื่อการแก้ไข</th>
                             </tr>
                         </thead>
-                        <tbody id="errorAnalysisTableBody"></tbody>
+                        <tbody id="errorAnalysisTableBody">
+                            <!-- JS injected -->
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -836,7 +916,7 @@
 
     </div>
 
-    <!-- AUDIO SYNTHESIZER ENGINE -->
+    <!-- AUDIO SYNTHESIZER ENGINE (Web Audio API - No External Asset Depend) -->
     <script>
         const SoundEngine = (() => {
             let audioCtx = null;
@@ -887,12 +967,14 @@
         })();
     </script>
 
-    <!-- MAIN GAME LOGIC -->
+    <!-- MAIN GAME LOGIC & MATHEMATICS GENERATOR -->
     <script>
+        // --- 1. MATHEMATICAL QUESTION GENERATOR & CURATED QUESTION BANK ---
         const QuestionBank = {
             generateQuestions: () => {
                 const list = [];
 
+                // LEVEL 1: FIND a (Q1 - 5)
                 const l1Data = [
                     { div: '(x - 3)', a: 3, opts: [-3, 3, 0] },
                     { div: '(x + 2)', a: -2, opts: [2, -2, -1] },
@@ -900,12 +982,12 @@
                     { div: '(x + 4)', a: -4, opts: [-4, 4, 0] },
                     { div: '(x - 1)', a: 1, opts: [-1, 1, 2] }
                 ];
-                l1Data.forEach((d) => {
+                l1Data.forEach((d, i) => {
                     list.push({
                         level: 1,
                         levelTitle: "LEVEL 1: FIND a",
                         text: `พหุนาม P(x) ถูกหารด้วย ${d.div} ค่าตัวหาร (a) ตามทฤษฎีบทเศษเหลือ P(a) คือเท่าใด?`,
-                        mathDisplay: `P(x) ÷ ${d.div}`,
+                        mathDisplay: `P(x) \\div ${d.div}`,
                         correctAnswer: String(d.a),
                         options: d.opts.map(String),
                         solution: `จากตัวหาร ${d.div} จัดให้อยู่ในรูป (x - a) จะได้ a = ${d.a}`,
@@ -913,6 +995,7 @@
                     });
                 });
 
+                // LEVEL 2: SUBSTITUTE (Q6 - 10)
                 const l2Data = [
                     { poly: "P(x) = 2x² + 3x + C", div: "(x - 2)", r: 5, correct: "P(2) = 5", opts: ["P(2) = 5", "P(-2) = 5", "P(5) = 2"] },
                     { poly: "P(x) = x³ - x² + C", div: "(x + 1)", r: 4, correct: "P(-1) = 4", opts: ["P(-1) = 4", "P(1) = 4", "P(4) = -1"] },
@@ -920,12 +1003,12 @@
                     { poly: "P(x) = x² + 4x + C", div: "(x + 3)", r: 2, correct: "P(-3) = 2", opts: ["P(-3) = 2", "P(3) = 2", "P(2) = -3"] },
                     { poly: "P(x) = 2x² + C", div: "(x - 4)", r: 10, correct: "P(4) = 10", opts: ["P(4) = 10", "P(-4) = 10", "P(10) = 4"] }
                 ];
-                l2Data.forEach((d) => {
+                l2Data.forEach((d, i) => {
                     list.push({
                         level: 2,
                         levelTitle: "LEVEL 2: SUBSTITUTE P(a) = r",
                         text: `กำหนด ${d.poly} หารด้วย ${d.div} เหลือเศษ ${d.r} นิพจน์ที่ถูกต้องคือข้อใด?`,
-                        mathDisplay: `${d.poly}  หารด้วย  ${d.div}  เหลือเศษ  ${d.r}`,
+                        mathDisplay: `${d.poly} \\quad \\text{หารด้วย} \\quad ${d.div} \\quad \\text{เหลือเศษ} \\quad ${d.r}`,
                         correctAnswer: d.correct,
                         options: d.opts,
                         solution: `ตามทฤษฎีบทเศษเหลือ ถ้าหาร P(x) ด้วย (x - a) เหลือเศษ r จะได้ P(a) = r`,
@@ -933,6 +1016,7 @@
                     });
                 });
 
+                // LEVEL 3: FIND C (Q11 - 17)
                 const l3Data = [
                     { poly: "P(x) = x² + 3x + C", div: "(x - 2)", r: 6, c: -4, opts: [-4, 4, 6] },
                     { poly: "P(x) = 2x² - x + C", div: "(x - 1)", r: 5, c: 4, opts: [4, -4, 5] },
@@ -947,14 +1031,15 @@
                         level: 3,
                         levelTitle: "LEVEL 3: FIND VALUE C",
                         text: `กำหนด ${d.poly} หารด้วย ${d.div} เหลือเศษ ${d.r} จงหาค่า C`,
-                        mathDisplay: `${d.poly},   r = ${d.r}`,
+                        mathDisplay: `${d.poly}, \\quad r = ${d.r}`,
                         correctAnswer: String(d.c),
                         options: d.opts.map(String),
-                        solution: `P(a) = r ⟹ แทนค่าแก้สมการได้ C = ${d.c}`,
+                        solution: `P(a) = r \\implies แทนค่าแก้สมการได้ C = ${d.c}`,
                         hint: "แทนค่า x = a ลงใน P(x) แล้วแก้สมการหา C"
                     });
                 });
 
+                // LEVEL 4: BOSS C CHALLENGE (Q18 - 20)
                 const l4Data = [
                     { poly: "P(x) = 2x³ - 3x² + 4x + C", div: "(x + 1)", r: 5, c: 14, opts: [14, -14, 5] },
                     { poly: "P(x) = x³ + 2x² - 5x + C", div: "(x - 2)", r: 12, c: 6, opts: [6, -6, 12] },
@@ -965,10 +1050,10 @@
                         level: 4,
                         levelTitle: "LEVEL 4: BOSS C CHALLENGE 🔥",
                         text: `[BOSS] กำหนด ${d.poly} หารด้วย ${d.div} เหลือเศษ ${d.r} จงหาค่า C`,
-                        mathDisplay: `${d.poly},   r = ${d.r}`,
+                        mathDisplay: `${d.poly}, \\quad r = ${d.r}`,
                         correctAnswer: String(d.c),
                         options: d.opts.map(String),
-                        solution: `ระวังเครื่องหมายลบเมื่อยกกำลังสาม! แทนค่าแล้วได้ C = ${d.c}`,
+                        solution: `ระวังระวังเครื่องหมายลบเมื่อยกกำลังสาม! แทนค่าแล้วได้ C = ${d.c}`,
                         hint: "ข้อนี้เป็นพหุนามกำลังสาม อย่าลืมระวังเครื่องหมายติดลบเมื่อแทนค่า x"
                     });
                 });
@@ -977,6 +1062,7 @@
             }
         };
 
+        // --- 2. GAME STATE & APPLICATION CONTROLLER ---
         const GameApp = (() => {
             let questions = [];
             let currentIdx = 0;
@@ -984,13 +1070,16 @@
             let combo = 0;
             let timer = 30;
             let timerInterval = null;
-            let mode = 'STORY';
+            let mode = 'STORY'; // 'STORY' or 'PRACTICE'
             let isPoseMode = true;
 
+            // Tracking and lock duration
             let hoveredZone = null;
             let hoverStartTime = null;
             const LOCK_DURATION_MS = 1000;
             let isOptionLocked = false;
+
+            // Analytics & Logs
             let responseLog = [];
 
             function showScreen(screenId) {
@@ -1036,14 +1125,37 @@
                 document.getElementById('hudScoreTxt').innerText = score;
                 document.getElementById('hudComboTxt').innerText = `x${combo}`;
                 document.getElementById('hudLevelBadge').innerText = q.levelTitle;
-                document.getElementById('hudQuestionText').innerText = q.text;
-                document.getElementById('hudMathDisplay').innerText = q.mathDisplay;
+                document.getElementById('hudQuestionText').innerHTML = q.text;
+                document.getElementById('hudMathDisplay').innerHTML = q.mathDisplay;
+                if (window.MathJax?.typesetPromise) {
+                    MathJax.typesetPromise([
+                        document.getElementById('hudQuestionText'),
+                        document.getElementById('hudMathDisplay')
+                    ]).catch(() => {});
+                }
 
-                const shuffledOpts = [...q.options].sort(() => Math.random() - 0.5);
-                document.getElementById('optValA').innerText = shuffledOpts[0];
-                document.getElementById('optValB').innerText = shuffledOpts[1];
-                document.getElementById('optValC').innerText = shuffledOpts[2];
+                // Shuffle answer choices as objects so the displayed
+                // A/B/C positions always remain correctly mapped to the
+                // question's actual correct answer.
+                const shuffledOpts = [...q.options]
+                    .map(value => ({
+                        value: String(value),
+                        isCorrect: String(value) === String(q.correctAnswer)
+                    }))
+                    .sort(() => Math.random() - 0.5);
 
+                document.getElementById('optValA').innerText = shuffledOpts[0].value;
+                document.getElementById('optValB').innerText = shuffledOpts[1].value;
+                document.getElementById('optValC').innerText = shuffledOpts[2].value;
+
+                // Store the current displayed mapping for answer checking.
+                q.displayedOptions = {
+                    A: shuffledOpts[0].value,
+                    B: shuffledOpts[1].value,
+                    C: shuffledOpts[2].value
+                };
+
+                // Reset timer
                 clearInterval(timerInterval);
                 timer = 30;
                 updateTimerUI();
@@ -1080,6 +1192,7 @@
                 });
             }
 
+            // Called continuously by Pose Tracker or Mouse movement
             function updateHoverZone(zone) {
                 if (isOptionLocked) return;
 
@@ -1094,7 +1207,7 @@
                     const elapsed = Date.now() - hoverStartTime;
                     const pct = Math.min(100, (elapsed / LOCK_DURATION_MS) * 100);
 
-                    const cardKey = hoveredZone;
+                    const cardKey = hoveredZone; // 'A', 'B', or 'C'
                     document.getElementById(`optCard${cardKey}`).classList.add('active-target');
                     document.getElementById(`optProgress${cardKey}`).style.width = `${pct}%`;
                     document.getElementById(`zone${cardKey}`).classList.add('hovered');
@@ -1114,16 +1227,22 @@
 
             function lockAndSubmitAnswer(optKey) {
                 clearInterval(timerInterval);
-                const selectedValue = document.getElementById(`optVal${optKey}`).innerText;
                 const q = questions[currentIdx];
-                const isCorrect = selectedValue === q.correctAnswer;
+                const selectedValue = q.displayedOptions?.[optKey] ??
+                    document.getElementById(`optVal${optKey}`).innerText;
+                const isCorrect = String(selectedValue) === String(q.correctAnswer);
 
                 document.getElementById(`optCard${optKey}`).classList.add('selected-lock');
                 document.getElementById(`zone${optKey}`).classList.add('locked');
 
+                // Classify error type if incorrect
                 let errorType = 'CORRECT';
                 if (!isCorrect) {
-                    if (selectedValue === String(-Number(q.correctAnswer))) {
+                    const numericCorrect = Number(q.correctAnswer);
+                    const numericSelected = Number(selectedValue);
+                    if (Number.isFinite(numericCorrect) &&
+                        Number.isFinite(numericSelected) &&
+                        numericSelected === -numericCorrect) {
                         errorType = 'SIGN_ERROR';
                     } else if (q.level === 1) {
                         errorType = 'SUBSTITUTION_ERROR';
@@ -1132,6 +1251,7 @@
                     }
                 }
 
+                // Log response data
                 responseLog.push({
                     qIdx: currentIdx,
                     level: q.level,
@@ -1140,10 +1260,11 @@
                     errorType: errorType
                 });
 
+                // Calculate Score & Combos
                 let earned = 0;
                 if (isCorrect) {
                     earned = 100;
-                    if (30 - timer <= 10) earned += 50;
+                    if (30 - timer <= 10) earned += 50; // Speed bonus
                     combo++;
                     score += earned * (combo >= 3 ? 1.5 : 1);
                     SoundEngine.playCorrect();
@@ -1159,6 +1280,7 @@
                     SoundEngine.playWrong();
                 }
 
+                // Show Feedback Modal
                 setTimeout(() => {
                     const fb = document.getElementById('feedbackOverlay');
                     const fbTitle = document.getElementById('fbTitle');
@@ -1228,6 +1350,7 @@
                 document.getElementById('dashAccuracy').innerText = `${accuracy}%`;
                 document.getElementById('dashAvgTime').innerText = `${avgTime}s`;
 
+                // Render Level Progress
                 const lvlContainer = document.getElementById('levelProgressList');
                 lvlContainer.innerHTML = '';
                 [1, 2, 3, 4].forEach(lvl => {
@@ -1248,6 +1371,7 @@
                     `;
                 });
 
+                // Render Error Table
                 const tbody = document.getElementById('errorAnalysisTableBody');
                 tbody.innerHTML = '';
                 const errors = {
@@ -1298,7 +1422,7 @@
             };
         })();
 
-        // MEDIAPIPE POSE ENGINE
+        // --- 3. MEDIAPIPE POSE DETECTION ENGINE ---
         const PoseTracker = (() => {
             let camera = null;
             let pose = null;
@@ -1334,8 +1458,15 @@
                     width: 640,
                     height: 480
                 });
-                camera.start();
-                document.getElementById('cameraActiveLabel').innerText = "Pose Camera Active";
+                try {
+                    camera.start();
+                    document.getElementById('cameraActiveLabel').innerText = "Pose Camera Active";
+                } catch (err) {
+                    console.error("Camera start failed:", err);
+                    camera = null;
+                    GameApp.toggleCameraInput();
+                    alert("ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการใช้กล้อง หรือเปิดเกมผ่าน HTTPS เช่น GitHub Pages");
+                }
             }
 
             function stopCamera() {
@@ -1353,15 +1484,19 @@
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
                 if (results.poseLandmarks) {
+                    // Draw Skeleton
                     drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#38bdf8', lineWidth: 2 });
                     drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#22c55e', lineWidth: 1, radius: 3 });
 
+                    // Calculate Body Centroid (Left Shoulder = 11, Right Shoulder = 12)
                     const leftShoulder = results.poseLandmarks[11];
                     const rightShoulder = results.poseLandmarks[12];
 
                     if (leftShoulder && rightShoulder) {
                         const bodyX = (leftShoulder.x + rightShoulder.x) / 2;
                         
+                        // Map body position (Normalized 0..1, mirrored)
+                        // Left Zone (A): bodyX > 0.6 (due to mirror), Right Zone (C): bodyX < 0.4
                         let detectedZone = null;
                         if (bodyX > 0.6) {
                             detectedZone = 'A';
@@ -1385,6 +1520,7 @@
             };
         })();
 
+        // --- 4. KEYBOARD SHORTCUT FALLBACKS ---
         window.addEventListener('keydown', (e) => {
             const key = e.key.toUpperCase();
             if (['A', 'B', 'C'].includes(key)) {
@@ -1392,6 +1528,7 @@
             }
         });
 
+        // --- 5. BACKGROUND STARFIELD CANVAS ANIMATION ---
         (function initBgCanvas() {
             const canvas = document.getElementById('bgCanvas');
             const ctx = canvas.getContext('2d');
