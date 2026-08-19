@@ -1,172 +1,738 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>REMAINDER RUSH — ภารกิจพิชิตค่า C</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800&family=Sarabun:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REMAINDER RUSH — ภารกิจพิชิตค่า C</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Kanit:wght@400;600;700&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+
+    <!-- MediaPipe Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --panel-bg: rgba(15, 23, 42, 0.85);
+            --primary-cyan: #38bdf8;
+            --accent-purple: #a855f7;
+            --accent-green: #22c55e;
+            --accent-red: #f43f5e;
+            --accent-yellow: #eab308;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-title: 'Chakra Petch', 'Kanit', sans-serif;
+            --font-body: 'Sarabun', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Background Animated Stars */
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #app {
+            position: relative;
+            width: 100%;
+            max-width: 1100px;
+            height: 680px;
+            background: rgba(10, 15, 30, 0.9);
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.15);
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        /* Screen Controller (ส่วนที่แก้ปัญหาหน้าจอกองรวมกัน) */
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 24px;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        .screen.active {
+            display: flex !important;
+        }
+
+        /* Buttons Styling */
+        .btn {
+            font-family: var(--font-title);
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--primary-cyan);
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--primary-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-cyan), var(--accent-purple));
+            border: none;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border-color: transparent;
+            color: var(--text-muted);
+        }
+
+        .btn-ghost:hover {
+            color: var(--accent-red);
+            background: rgba(244, 63, 94, 0.1);
+        }
+
+        /* Main Menu */
+        .menu-panel {
+            text-align: center;
+            margin: auto;
+            max-width: 650px;
+        }
+
+        .eyebrow {
+            color: var(--primary-cyan);
+            font-family: var(--font-title);
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .game-title {
+            font-family: var(--font-title);
+            font-size: 56px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+
+        .title-accent {
+            color: var(--primary-cyan);
+            text-shadow: 0 0 20px var(--primary-cyan);
+        }
+
+        .game-subtitle {
+            font-size: 20px;
+            color: var(--accent-yellow);
+            margin-bottom: 12px;
+        }
+
+        .menu-tagline {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .menu-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        /* HUD Header */
+        .game-hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-bg);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 10px 20px;
+            border-radius: 12px;
+        }
+
+        .hud-badge {
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid var(--accent-purple);
+            color: var(--accent-purple);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: var(--font-title);
+            font-size: 13px;
+        }
+
+        .hud-score {
+            font-family: var(--font-title);
+            font-size: 22px;
+            color: var(--accent-yellow);
+            font-weight: 700;
+        }
+
+        .timer-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 10px 0;
+        }
+
+        .timer-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .timer-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-yellow), var(--accent-red));
+            transition: width 0.2s linear;
+        }
+
+        .timer-num {
+            font-family: var(--font-title);
+            font-size: 16px;
+            width: 35px;
+        }
+
+        /* Camera Frame & Overlay (โจทย์และคำตอบซ้อนบนกล้อง) */
+        .cam-wrap {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            background: #020617;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .cam-video, .cam-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            z-index: 1;
+        }
+
+        /* Overlay Top: Question Console */
+        .camera-overlay-top {
+            position: relative;
+            z-index: 10;
+            margin: 12px;
+            padding: 14px 20px;
+            background: rgba(6, 9, 19, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .question-prompt {
+            font-family: 'Kanit', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .hint-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .hint-text {
+            font-size: 12px;
+            color: var(--accent-yellow);
+        }
+
+        /* Overlay Bottom: Answers Runway */
+        .camera-overlay-bottom {
+            position: relative;
+            z-index: 10;
+            margin: 12px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .zone {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .zone.hovered {
+            border-color: var(--primary-cyan);
+            background: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        .zone-arrow {
+            font-family: var(--font-title);
+            font-size: 12px;
+            color: var(--primary-cyan);
+            margin-bottom: 2px;
+        }
+
+        .choice-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-family: 'Kanit', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .zone-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            width: 0%;
+            background: var(--accent-green);
+            transition: width 0.1s linear;
+        }
+
+        /* Feedback Overlay */
+        .feedback-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 7, 18, 0.92);
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .feedback-layer.active {
+            display: flex;
+        }
+
+        /* How to Play */
+        .howto-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .howto-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 10px 14px;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-cyan);
+        }
+
+        .hs-num {
+            font-family: var(--font-title);
+            font-weight: 700;
+            color: var(--primary-cyan);
+        }
+
+        .hs-title { font-weight: 600; font-size: 14px; }
+        .hs-desc { font-size: 12px; color: var(--text-muted); }
+
+    </style>
 </head>
 <body>
 
-<div class="bg-grid"></div>
-<div class="bg-glow"></div>
+    <canvas id="bgCanvas"></canvas>
 
-<div id="app">
+    <div id="app">
 
-  <!-- ============ MAIN MENU ============ -->
-  <section id="screen-menu" class="screen active">
-    <div class="menu-panel">
-      <div class="eyebrow">MATHEMATICS LAB · ม.4 · ทฤษฎีบทเศษเหลือ</div>
-      <h1 class="game-title">REMAINDER<span class="title-accent">RUSH</span></h1>
-      <div class="game-subtitle">ภารกิจพิชิตค่า C</div>
-      <p class="menu-tagline">P(x) ÷ (x − a) เหลือเศษ r ⟹ P(a) = r — ใช้ร่างกายเคลื่อนที่เพื่อเลือกคำตอบ แล้วพิชิตค่า C ให้ได้ทั้ง 20 ข้อ</p>
-      <div class="menu-buttons">
-        <button id="btn-start" class="btn btn-primary btn-lg">▶ START GAME</button>
-        <button id="btn-howto" class="btn btn-secondary">HOW TO PLAY</button>
-        <button id="btn-practice" class="btn btn-secondary">PRACTICE MODE</button>
-        <button id="btn-battle" class="btn btn-secondary">CLASSROOM BATTLE</button>
-        <button id="btn-scoreboard" class="btn btn-secondary">SCOREBOARD</button>
-        <button id="btn-exit" class="btn btn-ghost">EXIT</button>
-      </div>
-    </div>
-    <div class="menu-formula-float" aria-hidden="true">
-      <div class="float-eq f1">P(x) = 2x²+3x+C</div>
-      <div class="float-eq f2">P(a) = r</div>
-      <div class="float-eq f3">(x − a)</div>
-      <div class="float-eq f4">C = r − P₀(a)</div>
-    </div>
-  </section>
+        <!-- ============ 1. MAIN MENU ============ -->
+        <section id="screen-menu" class="screen active">
+            <div class="menu-panel">
+                <div class="eyebrow">MATHEMATICS LAB · ม.4 · ทฤษฎีบทเศษเหลือ</div>
+                <h1 class="game-title">REMAINDER <span class="title-accent">RUSH</span></h1>
+                <div class="game-subtitle">ภารกิจพิชิตค่า C</div>
+                <p class="menu-tagline">P(x) ÷ (x − a) เหลือเศษ r ⟹ P(a) = r<br>ขยับร่างกายยืนในโซน A / B / C หรือใช้คีย์บอร์ดเพื่อพิชิตโจทย์</p>
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" onclick="GameApp.startGame()"><i class="fa-solid fa-play"></i> START GAME</button>
+                    <button class="btn btn-secondary" onclick="GameApp.showScreen('screen-howto')"><i class="fa-solid fa-book"></i> HOW TO PLAY</button>
+                    <button class="btn btn-secondary" onclick="GameApp.toggleCamera()"><i class="fa-solid fa-camera"></i> <span id="camToggleTxt">CAMERA: ON</span></button>
+                    <button class="btn btn-ghost" onclick="GameApp.showScreen('screen-menu')"><i class="fa-solid fa-rotate-left"></i> RESET</button>
+                </div>
+            </div>
+        </section>
 
-  <!-- ============ HOW TO PLAY ============ -->
-  <section id="screen-howto" class="screen">
-    <div class="panel wide-panel">
-      <h2 class="panel-title">HOW TO PLAY</h2>
-      <div class="howto-steps">
-        <div class="howto-step"><div class="hs-num">1</div><div class="hs-body"><div class="hs-title">อ่านโจทย์</div><div class="hs-desc">ดูพหุนาม P(x) ตัวหาร และเศษที่โจทย์กำหนด</div></div></div>
-        <div class="howto-step"><div class="hs-num">2</div><div class="hs-body"><div class="hs-title">หาค่า a</div><div class="hs-desc">จากตัวหาร (x − a) ให้ตั้ง x − a = 0 แล้วแก้หา a</div></div></div>
-        <div class="howto-step"><div class="hs-num">3</div><div class="hs-body"><div class="hs-title">ใช้ P(a) = r</div><div class="hs-desc">แทนค่า a ลงในพหุนาม แล้วให้เท่ากับเศษ r</div></div></div>
-        <div class="howto-step"><div class="hs-num">4</div><div class="hs-body"><div class="hs-title">แก้หาค่า C</div><div class="hs-desc">จัดสมการเพื่อแก้หาค่าคงที่ C</div></div></div>
-        <div class="howto-step"><div class="hs-num">5</div><div class="hs-body"><div class="hs-title">เลือกคำตอบด้วยร่างกาย</div><div class="hs-desc">ยืนหน้ากล้อง แล้วขยับตัวไปทาง A / B / C ค้างไว้ 1 วินาทีเพื่อล็อกคำตอบ</div></div></div>
-      </div>
-      <div class="howto-zones-demo">
-        <div class="hzd-arrow">← A</div>
-        <div class="hzd-arrow">↑ B</div>
-        <div class="hzd-arrow">C →</div>
-      </div>
-      <div class="howto-note">ไม่มีกล้อง? ใช้คีย์บอร์ด (←/A · ↑หรือSpace/B · →/D/C) หรือคลิกปุ่มคำตอบได้ทันที</div>
-      <button id="btn-howto-back" class="btn btn-primary">กลับเมนูหลัก</button>
-    </div>
-  </section>
+        <!-- ============ 2. HOW TO PLAY ============ -->
+        <section id="screen-howto" class="screen">
+            <h2 style="font-family: var(--font-title); color: var(--primary-cyan);">HOW TO PLAY</h2>
+            <div class="howto-steps">
+                <div class="howto-step"><div class="hs-num">1</div><div><div class="hs-title">อ่านโจทย์</div><div class="hs-desc">ดูพหุนาม P(x) ตัวหาร และเศษที่กำหนด</div></div></div>
+                <div class="howto-step"><div class="hs-num">2</div><div><div class="hs-title">หาค่า a</div><div class="hs-desc">จากตัวหาร (x − a) ให้ตั้ง x − a = 0 แล้วแก้หาค่า a</div></div></div>
+                <div class="howto-step"><div class="hs-num">3</div><div><div class="hs-title">ใช้ P(a) = r</div><div class="hs-desc">แทนค่า a ในพหุนามแล้วจับเท่ากับเศษ r เพื่อแก้หา C</div></div></div>
+                <div class="howto-step"><div class="hs-num">4</div><div><div class="hs-title">เลือกคำตอบ</div><div class="hs-desc">เอียงตัวไปทางโซน A (ซ้าย), B (กลาง), C (ขวา) ค้างไว้ 1 วินาที หรือกดปุ่ม A, B, C บนคีย์บอร์ด</div></div></div>
+            </div>
+            <button class="btn btn-primary" onclick="GameApp.showScreen('screen-menu')">กลับเมนูหลัก</button>
+        </section>
 
-  <!-- ============ SETUP ============ -->
-  <section id="screen-setup" class="screen">
-    <div class="panel">
-      <h2 id="setup-title" class="panel-title">START GAME</h2>
-      <p id="setup-desc" class="setup-desc"></p>
-      <div id="setup-player-block" style="display:none">
-        <div id="setup-players"></div>
-      </div>
-      <div class="setup-actions">
-        <button id="btn-setup-back" class="btn btn-ghost">◀ ย้อนกลับ</button>
-        <button id="btn-setup-go" class="btn btn-primary btn-lg">เริ่มเกม ▶</button>
-      </div>
-    </div>
-  </section>
+        <!-- ============ 3. GAMEPLAY (กล้อง + โจทย์ Overlay) ============ -->
+        <section id="screen-game" class="screen">
+            <div class="game-hud">
+                <span id="level-badge" class="hud-badge">LV.1 · FIND a</span>
+                <div>
+                    <span style="font-size: 12px; color: var(--text-muted);">SCORE: </span>
+                    <span id="hud-score" class="hud-score">0</span>
+                </div>
+                <button class="btn btn-ghost" style="padding: 4px 8px;" onclick="GameApp.showScreen('screen-menu')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
 
-  <!-- ============ GAME (โจทย์และคำตอบรวมอยู่ในกล้อง) ============ -->
-  <section id="screen-game" class="screen">
-    <div class="game-hud">
-      <div class="hud-left">
-        <span id="level-badge" class="hud-badge">LV.1 · FIND a</span>
-        <span id="q-counter" class="hud-counter">1 / 20</span>
-      </div>
-      <div class="hud-center">
-        <span id="hud-player" class="hud-player">Player 1</span>
-        <span id="hud-combo" class="hud-combo"></span>
-      </div>
-      <div class="hud-right">
-        <span class="hud-score-label">SCORE</span>
-        <span id="hud-score" class="hud-score">0</span>
-        <button id="btn-sound" class="btn-icon" title="เปิด/ปิดเสียง">🔊</button>
-        <button id="btn-quit" class="btn-icon" title="ออกจากเกม">✕</button>
-      </div>
-    </div>
+            <div class="timer-wrap">
+                <div class="timer-track"><div id="timer-bar" class="timer-bar"></div></div>
+                <div id="timer-num" class="timer-num">30s</div>
+            </div>
 
-    <div class="timer-wrap">
-      <div class="timer-label">TIME</div>
-      <div class="timer-track"><div id="timer-bar" class="timer-bar"></div></div>
-      <div id="timer-num" class="timer-num">30</div>
-    </div>
+            <!-- CAMERA FRAME WITH OVERLAYS -->
+            <div id="cam-wrap" class="cam-wrap">
+                <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
+                <canvas id="cam-canvas" class="cam-canvas"></canvas>
 
-    <!-- MAIN CAMERA CONTAINER & OVERLAYS -->
-    <div id="cam-wrap" class="cam-wrap">
-      <!-- 1. Background Feed & Pose Skeleton Canvas -->
-      <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
-      <canvas id="cam-canvas" class="cam-canvas" width="640" height="480"></canvas>
-      <div id="cam-status" class="cam-status"></div>
+                <!-- OVERLAY TOP: QUESTION -->
+                <div class="camera-overlay-top">
+                    <div id="question-prompt" class="question-prompt">P(x) หารด้วย (x - 3) ถามว่าค่า a คือเท่าใด?</div>
+                    <div class="hint-row">
+                        <button class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px;" onclick="GameApp.useHint()">💡 HINT (-20)</button>
+                        <div id="hint-text" class="hint-text"></div>
+                    </div>
+                </div>
 
-      <!-- 2. OVERLAY บน: กล่องโจทย์ (Question Console) -->
-      <div class="question-console camera-overlay-top">
-        <div class="console-glow"></div>
-        <div id="question-prompt" class="question-prompt"></div>
-        <div class="hint-row">
-          <button id="btn-hint" class="btn btn-hint">💡 HINT (−20)</button>
-          <div id="hint-text" class="hint-text"></div>
-        </div>
-      </div>
+                <!-- OVERLAY BOTTOM: CHOICES A / B / C -->
+                <div class="camera-overlay-bottom">
+                    <div id="zone-a" class="zone" onclick="GameApp.selectChoice('A')">
+                        <div class="zone-arrow">← ZONE A</div>
+                        <button id="choice-a" class="choice-btn">-3</button>
+                        <div id="prog-a" class="zone-progress"></div>
+                    </div>
+                    <div id="zone-b" class="zone" onclick="GameApp.selectChoice('B')">
+                        <div class="zone-arrow">↑ ZONE B</div>
+                        <button id="choice-b" class="choice-btn">3</button>
+                        <div id="prog-b" class="zone-progress"></div>
+                    </div>
+                    <div id="zone-c" class="zone" onclick="GameApp.selectChoice('C')">
+                        <div class="zone-arrow">ZONE C →</div>
+                        <button id="choice-c" class="choice-btn">0</button>
+                        <div id="prog-c" class="zone-progress"></div>
+                    </div>
+                </div>
 
-      <!-- 3. OVERLAY ล่าง: โซนเลือกคำตอบ (A / B / C Runway) -->
-      <div class="runway camera-overlay-bottom">
-        <div id="zone-a" class="zone zone-a" data-choice="A">
-          <div class="zone-arrow">←</div>
-          <button id="choice-a" class="choice-btn"></button>
-        </div>
-        <div id="zone-b" class="zone zone-b" data-choice="B">
-          <div class="zone-arrow">↑</div>
-          <button id="choice-b" class="choice-btn"></button>
-        </div>
-        <div id="zone-c" class="zone zone-c" data-choice="C">
-          <div class="zone-arrow">→</div>
-          <button id="choice-c" class="choice-btn"></button>
-        </div>
-      </div>
+                <div id="feedback-layer" class="feedback-layer">
+                    <h2 id="fb-title" style="font-family: var(--font-title); font-size: 32px; margin-bottom: 10px;">🎉 Correct!</h2>
+                    <p id="fb-desc" style="font-size: 16px; margin-bottom: 20px; max-width: 500px;"></p>
+                    <button class="btn btn-primary" onclick="GameApp.nextQuestion()">ข้อถัดไป ▶</button>
+                </div>
+            </div>
+        </section>
 
-      <button id="btn-cam-retry" class="btn btn-secondary cam-retry" style="display:none">🔄 ลองเปิดกล้องอีกครั้ง</button>
     </div>
 
-    <div id="feedback-layer" class="feedback-layer"></div>
-    <div id="combo-layer" class="combo-layer"></div>
-  </section>
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // Background Stars
+        (function() {
+            const canvas = document.getElementById('bgCanvas');
+            const ctx = canvas.getContext('2d');
+            let stars = [];
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                stars = Array.from({length: 60}, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 1.5,
+                    s: Math.random() * 0.5 + 0.2
+                }));
+            }
+            function draw() {
+                ctx.fillStyle = '#030712';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#38bdf8';
+                stars.forEach(st => {
+                    st.y += st.s;
+                    if(st.y > canvas.height) st.y = 0;
+                    ctx.beginPath();
+                    ctx.arc(st.x, st.y, st.r, 0, Math.PI*2);
+                    ctx.fill();
+                });
+                requestAnimationFrame(draw);
+            }
+            window.addEventListener('resize', resize);
+            resize(); draw();
+        })();
 
-  <!-- ============ DASHBOARD ============ -->
-  <section id="screen-dashboard" class="screen">
-    <div class="panel wide-panel">
-      <div id="dashboard-content"></div>
-      <div id="dashboard-actions" class="dashboard-actions"></div>
-    </div>
-  </section>
+        // Question Bank
+        const Questions = [
+            { level: "LV.1 · FIND a", prompt: "พหุนาม P(x) ถูกหารด้วย (x - 4) ค่า a คือข้อใด?", choices: ["4", "-4", "0"], correct: "4", hint: "เปลี่ยนเครื่องหมายของพจน์ตัวหาร (x - a)", sol: "จาก (x - 4) จะได้ a = 4" },
+            { level: "LV.1 · FIND a", prompt: "พหุนาม P(x) ถูกหารด้วย (x + 2) ค่า a คือข้อใด?", choices: ["2", "-2", "1"], correct: "-2", hint: "ตั้ง x + 2 = 0 แล้วแก้หา x", sol: "จาก x + 2 = 0 จะได้ a = -2" },
+            { level: "LV.2 · SUBSTITUTE", prompt: "P(x) = x² + 3x + C หารด้วย (x - 1) เหลือเศษ 5 ตั้งสมการได้ตามข้อใด?", choices: ["P(1) = 5", "P(-1) = 5", "P(5) = 1"], correct: "P(1) = 5", hint: "ใช้ทฤษฎีบทเศษเหลือ P(a) = r", sol: "ตัวหารคือ (x - 1) ⟹ a = 1 ดังนั้น P(1) = 5" },
+            { level: "LV.3 · FIND C", prompt: "P(x) = x² + 2x + C หารด้วย (x - 2) เหลือเศษ 10 ค่า C คือเท่าใด?", choices: ["2", "4", "10"], correct: "2", hint: "แทน x = 2 ใน P(2) = 2² + 2(2) + C = 10", sol: "4 + 4 + C = 10 ⟹ C = 2" },
+            { level: "LV.4 · BOSS CHALLENGE", prompt: "[BOSS] P(x) = x³ - 2x² + C หารด้วย (x - 3) เหลือเศษ 15 ค่า C คือเท่าใด?", choices: ["6", "-6", "15"], correct: "6", hint: "แทน x = 3 ใน P(3) = 3³ - 2(3)² + C = 15", sol: "27 - 18 + C = 15 ⟹ 9 + C = 15 ⟹ C = 6" }
+        ];
 
-  <!-- ============ EXIT ============ -->
-  <section id="screen-exit" class="screen">
-    <div class="panel exit-panel">
-      <div class="exit-icon">🖖</div>
-      <h2 class="panel-title">ขอบคุณที่เล่น REMAINDER RUSH!</h2>
-      <p class="setup-desc">ปิดแท็บนี้ได้เลย หรือกลับไปเล่นต่อ</p>
-      <button class="btn btn-primary" onclick="document.getElementById('screen-exit').classList.remove('active');document.getElementById('screen-menu').classList.add('active');">กลับเมนูหลัก</button>
-    </div>
-  </section>
+        // Game State Controller
+        const GameApp = (() => {
+            let currentQ = 0;
+            let score = 0;
+            let timer = 30;
+            let timerTimer = null;
+            let useCam = true;
+            let currentHover = null;
+            let hoverStart = null;
+            let isLocked = false;
 
-</div>
+            function showScreen(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+            }
 
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="js/questions.js"></script>
-<script src="js/pose.js"></script>
-<script src="js/scoring.js"></script>
-<script src="js/feedback.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/game.js"></script>
+            function startGame() {
+                currentQ = 0;
+                score = 0;
+                showScreen('screen-game');
+                loadQuestion();
+                if(useCam) PoseEngine.start();
+            }
+
+            function loadQuestion() {
+                isLocked = false;
+                currentHover = null;
+                resetProgress();
+                document.getElementById('feedback-layer').classList.remove('active');
+                document.getElementById('hint-text').innerText = '';
+
+                const q = Questions[currentQ];
+                document.getElementById('level-badge').innerText = q.level;
+                document.getElementById('hud-score').innerText = score;
+                document.getElementById('question-prompt').innerText = q.prompt;
+
+                document.getElementById('choice-a').innerText = q.choices[0];
+                document.getElementById('choice-b').innerText = q.choices[1];
+                document.getElementById('choice-c').innerText = q.choices[2];
+
+                clearInterval(timerTimer);
+                timer = 30;
+                updateTimer();
+                timerTimer = setInterval(() => {
+                    timer--;
+                    updateTimer();
+                    if(timer <= 0) {
+                        clearInterval(timerTimer);
+                        selectChoice(null);
+                    }
+                }, 1000);
+            }
+
+            function updateTimer() {
+                document.getElementById('timer-num').innerText = `${timer}s`;
+                document.getElementById('timer-bar').style.width = `${(timer/30)*100}%`;
+            }
+
+            function resetProgress() {
+                ['a','b','c'].forEach(k => {
+                    document.getElementById(`prog-${k}`).style.width = '0%';
+                    document.getElementById(`zone-${k}`).classList.remove('hovered');
+                });
+            }
+
+            function setHover(zoneKey) {
+                if(isLocked) return;
+                if(zoneKey !== currentHover) {
+                    currentHover = zoneKey;
+                    hoverStart = zoneKey ? Date.now() : null;
+                    resetProgress();
+                }
+
+                if(currentHover) {
+                    const elapsed = Date.now() - hoverStart;
+                    const pct = Math.min(100, (elapsed / 1000) * 100);
+                    const k = currentHover.toLowerCase();
+                    document.getElementById(`prog-${k}`).style.width = `${pct}%`;
+                    document.getElementById(`zone-${k}`).classList.add('hovered');
+
+                    if(elapsed >= 1000) {
+                        isLocked = true;
+                        selectChoice(currentHover);
+                    }
+                }
+            }
+
+            function selectChoice(choiceKey) {
+                clearInterval(timerTimer);
+                const q = Questions[currentQ];
+                let selectedVal = null;
+                if(choiceKey === 'A') selectedVal = document.getElementById('choice-a').innerText;
+                if(choiceKey === 'B') selectedVal = document.getElementById('choice-b').innerText;
+                if(choiceKey === 'C') selectedVal = document.getElementById('choice-c').innerText;
+
+                const isCorrect = selectedVal === q.correct;
+                const fb = document.getElementById('feedback-layer');
+                const fbTitle = document.getElementById('fb-title');
+                const fbDesc = document.getElementById('fb-desc');
+
+                if(isCorrect) {
+                    score += 100 + timer * 2;
+                    fbTitle.innerText = "🎉 ถูกต้อง!";
+                    fbTitle.style.color = "var(--accent-green)";
+                    fbDesc.innerText = q.sol;
+                } else {
+                    fbTitle.innerText = "❌ ยังไม่ถูกต้อง";
+                    fbTitle.style.color = "var(--accent-red)";
+                    fbDesc.innerText = `เฉลย: ${q.correct}\n${q.sol}`;
+                }
+
+                document.getElementById('hud-score').innerText = score;
+                fb.classList.add('active');
+            }
+
+            function nextQuestion() {
+                currentQ++;
+                if(currentQ < Questions.length) {
+                    loadQuestion();
+                } else {
+                    alert(`🎉 จบเกม! คุณได้คะแนนทั้งหมด ${score} คะแนน`);
+                    showScreen('screen-menu');
+                }
+            }
+
+            function useHint() {
+                document.getElementById('hint-text').innerText = Questions[currentQ].hint;
+                score = Math.max(0, score - 20);
+                document.getElementById('hud-score').innerText = score;
+            }
+
+            function toggleCamera() {
+                useCam = !useCam;
+                document.getElementById('camToggleTxt').innerText = useCam ? "CAMERA: ON" : "CAMERA: OFF";
+            }
+
+            return { showScreen, startGame, loadQuestion, nextQuestion, selectChoice, setHover, useHint, toggleCamera };
+        })();
+
+        // MediaPipe Pose Detector
+        const PoseEngine = (() => {
+            let camera = null;
+            let pose = null;
+            const video = document.getElementById('cam-video');
+            const canvas = document.getElementById('cam-canvas');
+            const ctx = canvas.getContext('2d');
+
+            function start() {
+                if(pose) return;
+                pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
+                pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5 });
+                pose.onResults(onResults);
+
+                camera = new Camera(video, {
+                    onFrame: async () => { await pose.send({ image: video }); },
+                    width: 640, height: 480
+                });
+                camera.start();
+            }
+
+            function onResults(results) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.save();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (results.poseLandmarks) {
+                    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#38bdf8', lineWidth: 2 });
+                    drawLandmarks(ctx, results.poseLandmarks, { color: '#22c55e', radius: 3 });
+
+                    const ls = results.poseLandmarks[11];
+                    const rs = results.poseLandmarks[12];
+                    if(ls && rs) {
+                        const midX = (ls.x + rs.x) / 2;
+                        if(midX > 0.6) GameApp.setHover('A');
+                        else if(midX < 0.4) GameApp.setHover('C');
+                        else GameApp.setHover('B');
+                    }
+                } else {
+                    GameApp.setHover(null);
+                }
+                ctx.restore();
+            }
+
+            return { start };
+        })();
+
+        // Keyboard Controls
+        window.addEventListener('keydown', (e) => {
+            const k = e.key.toUpperCase();
+            if(k === 'A' || k === 'ARROWLEFT') GameApp.selectChoice('A');
+            if(k === 'B' || k === 'ARROWUP' || k === ' ') GameApp.selectChoice('B');
+            if(k === 'C' || k === 'ARROWRIGHT') GameApp.selectChoice('C');
+        });
+    </script>
 </body>
 </html>
